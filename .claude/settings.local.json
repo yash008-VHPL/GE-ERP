@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(DB=\"postgresql://GeErpAdmin:<kotFis-gezxo9>@ge-erp-db.postgres.database.azure.com:5432/ge_erp?sslmode=require\")",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(echo \"Running $f...\")",
+      "Bash(psql \"$DB\" -f \"$f\")",
+      "Bash(DB=\"postgresql://GeErpAdmin:kotFis-gezxo9@ge-erp-db.postgres.database.azure.com:5432/ge_erp?sslmode=require\")",
+      "Bash(done)",
+      "Bash(psql \"postgresql://GeErpAdmin:kotFis-gezxo9@ge-erp-db.postgres.database.azure.com:5432/postgres?sslmode=require\" -c \"CREATE DATABASE ge_erp;\")",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(python3 -m json.tool)",
+      "Bash(npx ts-node -e \":*)",
+      "Bash(psql \"postgresql://GeErpAdmin:kotFis-gezxo9@ge-erp-db.postgres.database.azure.com:5432/ge_erp?sslmode=require\" -f \"/Users/yash008/Documents/Coding/Coding/GE Apps/erp/sql/migrations/001_rename_usage_to_expense.sql\")",
+      "Bash(\"/Users/yash008/Documents/Coding/Coding/GE Apps/erp/services/purchase-api/.env\")",
+      "Bash(npm create:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3002/health)",
+      "Bash(SKILL_DIR=\"/Users/yash008/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/5e229349-8605-4d67-866b-fe86d930b0b0/78c8a166-8903-45c0-8f78-8fe1e9d34cc3/skills/docx\")",
+      "Bash(python \"$SKILL_DIR/scripts/office/unpack.py\" \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .docx\" /tmp/ge_po_unpacked/)",
+      "Bash(python \"$SKILL_DIR/scripts/office/soffice.py\" --headless --convert-to pdf \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .docx\")",
+      "Bash(pdftoppm -jpeg -r 150 \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .pdf\" /tmp/ge_po_page)",
+      "Read(//private/tmp/**)",
+      "Bash(pandoc \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .docx\" -o /tmp/ge_po.md --track-changes=all)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

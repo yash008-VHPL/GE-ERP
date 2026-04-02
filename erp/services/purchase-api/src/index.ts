@@ -1,0 +1,33 @@
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import { config, allowedOrigins } from './config/env';
+import { vendorsRouter }        from './routes/vendors';
+import { itemsRouter }          from './routes/items';
+import { purchaseOrdersRouter } from './routes/purchaseOrders';
+import { vendorBillsRouter }    from './routes/vendorBills';
+import { paymentsRouter }       from './routes/payments';
+
+const app = express();
+
+app.use(helmet());
+app.use(express.json());
+app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : '*', credentials: true }));
+
+app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'ge-erp-purchase-api' }));
+
+app.use('/vendors',         vendorsRouter);
+app.use('/items',           itemsRouter);
+app.use('/purchase-orders', purchaseOrdersRouter);
+app.use('/vendor-bills',    vendorBillsRouter);
+app.use('/payments',        paymentsRouter);
+
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[error]', err.message);
+  res.status(500).json({ error: err.message });
+});
+
+app.listen(config.PORT, () => {
+  console.log(`[server] GE ERP Purchase API on port ${config.PORT}`);
+});
