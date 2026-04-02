@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Upload, Button, message, Typography, Space } from 'antd';
 import { UploadOutlined, LinkOutlined } from '@ant-design/icons';
-import type { UploadFile } from 'antd';
 import { spApi } from '../../config/apiClient';
 import type { DocType } from '../../types/document';
 
