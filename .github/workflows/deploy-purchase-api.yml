@@ -1,0 +1,41 @@
+name: Deploy Purchase API to Azure App Service
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'erp/services/purchase-api/**'
+      - '.github/workflows/deploy-purchase-api.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: erp/services/purchase-api
+        run: npm install
+
+      - name: Build TypeScript
+        working-directory: erp/services/purchase-api
+        run: npm run build
+
+      - name: Prune dev dependencies
+        working-directory: erp/services/purchase-api
+        run: npm prune --production
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ge-erp-api
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: erp/services/purchase-api
