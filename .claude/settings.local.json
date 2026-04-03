@@ -26,7 +26,8 @@
       "Bash(pdftoppm -jpeg -r 150 \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .pdf\" /tmp/ge_po_page)",
       "Read(//private/tmp/**)",
       "Bash(pandoc \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .docx\" -o /tmp/ge_po.md --track-changes=all)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(node_modules/.bin/tsc --noEmit)"
     ]
   }
 }

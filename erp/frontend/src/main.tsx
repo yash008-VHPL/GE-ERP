@@ -4,10 +4,10 @@ import './index.css'
 import App from './App.tsx'
 import { msalReady } from './config/msalInstance.ts'
 
-await msalReady;
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+msalReady.then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}).catch(console.error);

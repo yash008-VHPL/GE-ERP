@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, Button, message, Typography, Space } from 'antd';
+import { Button, message, Typography, Space } from 'antd';
 import { UploadOutlined, LinkOutlined } from '@ant-design/icons';
 import { spApi } from '../../config/apiClient';
 import type { DocType } from '../../types/document';
@@ -18,7 +18,9 @@ export function DocumentUpload({ docId, label, relatedDocId, onUploaded }: Props
   const [uploading, setUploading]   = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  const handleUpload = async (file: File) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     setUploading(true);
     try {
       const form = new FormData();
@@ -38,22 +40,29 @@ export function DocumentUpload({ docId, label, relatedDocId, onUploaded }: Props
       message.error(msg);
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
-    return false; // prevent antd auto-upload
   };
 
   return (
     <Space direction="vertical" size={4} style={{ width: '100%' }}>
       <Text type="secondary" style={{ fontSize: 12 }}>{label}</Text>
-      <Upload
-        beforeUpload={handleUpload}
-        showUploadList={false}
-        accept=".pdf,.jpg,.jpeg,.png,.tiff,.xlsx,.xls,.docx,.doc,.msg"
-      >
-        <Button icon={<UploadOutlined />} loading={uploading} size="small">
+      <label>
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.tiff,.xlsx,.xls,.docx,.doc,.msg"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+        <Button
+          icon={<UploadOutlined />}
+          loading={uploading}
+          size="small"
+          onClick={(e) => { (e.currentTarget.previousElementSibling as HTMLInputElement)?.click(); }}
+        >
           {uploading ? 'Uploading…' : 'Attach file'}
         </Button>
-      </Upload>
+      </label>
       {uploadedUrl && (
         <Link href={uploadedUrl} target="_blank">
           <LinkOutlined /> View on SharePoint

@@ -30,7 +30,7 @@ export function AppShell() {
         key: 'logout',
         icon: <LogoutOutlined />,
         label: 'Sign out',
-        onClick: () => instance.logoutPopup(),
+        onClick: () => instance.logoutRedirect(),
       },
     ],
   };

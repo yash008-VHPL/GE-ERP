@@ -14,7 +14,8 @@ const { Title } = Typography;
 interface LineItem { key: number; itemId?: number; description?: string; quantity: number; unitPrice: number; }
 
 export function POCreate() {
-  const [form]      = Form.useForm();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [form]      = Form.useForm() as any[];
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [items, setItems]     = useState<Item[]>([]);
   const [lines, setLines]     = useState<LineItem[]>([{ key: 0, quantity: 1, unitPrice: 0 }]);
@@ -30,8 +31,8 @@ export function POCreate() {
   const onVendorChange = (id: number) => {
     const v = vendors.find(x => x.vendor_id === id) ?? null;
     setSelectedVendor(v);
-    form.setFieldValue('workflow', v?.credit_terms ? 'CREDIT' : 'PREPAY');
-    form.setFieldValue('currency', v?.currency ?? 'USD');
+    form.setFieldsValue({ workflow: v?.credit_terms ? 'CREDIT' : 'PREPAY' });
+    form.setFieldsValue({ currency: v?.currency ?? 'USD' });
   };
 
   const updateLine = (key: number, field: keyof LineItem, value: unknown) => {
@@ -66,13 +67,13 @@ export function POCreate() {
     {
       title: 'Qty', width: '12%',
       render: (_: unknown, row: LineItem) => (
-        <InputNumber min={0.0001} value={row.quantity} onChange={v => updateLine(row.key, 'quantity', v ?? 1)} style={{ width: '100%' }} />
+        <InputNumber min={0.0001} value={row.quantity} onChange={(v: number | null) => updateLine(row.key, 'quantity', v ?? 1)} style={{ width: '100%' }} />
       ),
     },
     {
       title: 'Unit Price', width: '15%',
       render: (_: unknown, row: LineItem) => (
-        <InputNumber min={0} precision={4} value={row.unitPrice} onChange={v => updateLine(row.key, 'unitPrice', v ?? 0)} style={{ width: '100%' }} />
+        <InputNumber min={0} precision={4} value={row.unitPrice} onChange={(v: number | null) => updateLine(row.key, 'unitPrice', v ?? 0)} style={{ width: '100%' }} />
       ),
     },
     { title: 'Amount', width: '12%', render: (_: unknown, row: LineItem) => <strong>{lineTotal(row)}</strong> },
@@ -154,7 +155,7 @@ export function POCreate() {
         </Space>
 
         <div style={{ textAlign: 'right', marginTop: 8, fontSize: 16 }}>
-          <strong>Total: {form.getFieldValue('currency') ?? 'USD'} {grandTotal}</strong>
+          <strong>Total: {(form.getFieldsValue(['currency'])?.currency as string) ?? 'USD'} {grandTotal}</strong>
         </div>
 
         <Divider />
