@@ -6,6 +6,7 @@ import { config, allowedOrigins } from './config/env';
 import { vendorsRouter }        from './routes/vendors';
 import { itemsRouter }          from './routes/items';
 import { purchaseOrdersRouter } from './routes/purchaseOrders';
+import { itemReceiptsRouter }   from './routes/itemReceipts';
 import { vendorBillsRouter }    from './routes/vendorBills';
 import { paymentsRouter }       from './routes/payments';
 
@@ -20,6 +21,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'ge-erp-purc
 app.use('/vendors',         vendorsRouter);
 app.use('/items',           itemsRouter);
 app.use('/purchase-orders', purchaseOrdersRouter);
+app.use('/item-receipts',   itemReceiptsRouter);
 app.use('/vendor-bills',    vendorBillsRouter);
 app.use('/payments',        paymentsRouter);
 
