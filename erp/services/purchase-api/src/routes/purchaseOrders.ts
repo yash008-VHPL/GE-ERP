@@ -61,6 +61,18 @@ purchaseOrdersRouter.patch('/:docId/status', requireAuth, async (req: Request, r
   } catch (e) { next(e); }
 });
 
+// DELETE /purchase-orders/:docId — hard delete (testing only)
+purchaseOrdersRouter.delete('/:docId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await pool.query(
+      `DELETE FROM purchase_orders WHERE doc_id = $1 RETURNING doc_id`,
+      [req.params.docId]
+    );
+    if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
+    res.json({ success: true, deleted: rows[0].doc_id });
+  } catch (e) { next(e); }
+});
+
 // GET /purchase-orders/:docId/pdf — stream PDF to browser
 purchaseOrdersRouter.get('/:docId/pdf', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Space, Select, Typography, Tooltip } from 'antd';
-import { PlusOutlined, FilePdfOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Select, Typography, Tooltip, Popconfirm, message } from 'antd';
+import { PlusOutlined, FilePdfOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
@@ -24,6 +24,17 @@ export function POList() {
       .finally(() => setLoading(false));
   }, [statusFilter]);
 
+  const handleDelete = async (docId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await purchaseApi.delete(`/purchase-orders/${docId}`);
+      message.success(`${docId} deleted`);
+      setOrders(prev => prev.filter(o => o.doc_id !== docId));
+    } catch {
+      message.error('Failed to delete');
+    }
+  };
+
   const handlePdf = async (docId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const response = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
@@ -39,14 +50,26 @@ export function POList() {
     { title: 'Order Date',dataIndex: 'order_date',  width: 110, render: (v: string) => dayjs(v).format('DD MMM YYYY') },
     { title: 'Currency',  dataIndex: 'currency',    width: 80 },
     {
-      title: 'Actions', width: 100,
+      title: 'Actions', width: 130,
       render: (_: unknown, row: PurchaseOrder) => (
         <Space>
           <Tooltip title="View">
-            <Button size="small" icon={<EyeOutlined />}  onClick={() => navigate(`/purchase/orders/${row.doc_id}`)} />
+            <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/purchase/orders/${row.doc_id}`)} />
           </Tooltip>
           <Tooltip title="Download PDF">
             <Button size="small" icon={<FilePdfOutlined />} onClick={e => handlePdf(row.doc_id, e)} />
+          </Tooltip>
+          <Tooltip title="Delete">
+            <Popconfirm
+              title={`Delete ${row.doc_id}?`}
+              description="This cannot be undone."
+              okText="Delete" okButtonProps={{ danger: true }}
+              cancelText="Cancel"
+              onConfirm={e => handleDelete(row.doc_id, e as React.MouseEvent)}
+              onPopupClick={e => e.stopPropagation()}
+            >
+              <Button danger size="small" icon={<DeleteOutlined />} onClick={e => e.stopPropagation()} />
+            </Popconfirm>
           </Tooltip>
         </Space>
       ),

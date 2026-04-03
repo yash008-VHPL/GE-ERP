@@ -95,6 +95,18 @@ itemReceiptsRouter.post('/', async (req, res, next) => {
   }
 });
 
+// DELETE /item-receipts/:docId — hard delete (testing only)
+itemReceiptsRouter.delete('/:docId', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `DELETE FROM item_receipts WHERE doc_id = $1 RETURNING doc_id`,
+      [req.params.docId]
+    );
+    if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
+    res.json({ data: { deleted: rows[0].doc_id } });
+  } catch (e) { next(e); }
+});
+
 // PATCH /item-receipts/:docId/status
 itemReceiptsRouter.patch('/:docId/status', async (req, res, next) => {
   try {
