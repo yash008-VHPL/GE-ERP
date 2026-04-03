@@ -8,6 +8,10 @@ on:
       - '.github/workflows/deploy-purchase-api.yml'
   workflow_dispatch:
 
+permissions:
+  id-token: write   # required for OIDC login
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -33,9 +37,15 @@ jobs:
         working-directory: erp/services/purchase-api
         run: npm prune --production
 
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: ge-erp-api
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: erp/services/purchase-api
