@@ -8,7 +8,7 @@ const schema = z.object({
   AZURE_CLIENT_ID:  z.string().uuid(),
   DATABASE_URL:     z.string().url(),
   ALLOWED_ORIGINS:  z.string().default(''),
-  COMPANY_NAME:     z.string().default('GIIAVA Pte Ltd'),
+  COMPANY_NAME:     z.string().default('GIIAVA Europe BV'),
   COMPANY_ADDRESS:  z.string().default(''),
   COMPANY_EMAIL:    z.string().default(''),
   COMPANY_PHONE:    z.string().default(''),
