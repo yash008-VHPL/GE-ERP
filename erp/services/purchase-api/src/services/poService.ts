@@ -46,14 +46,14 @@ export async function createPurchaseOrder(data: {
   vendorId:     number;
   workflow:     'CREDIT' | 'PREPAY';
   orderDate:    string;
-  expectedDate: string | null;
   currency:     string;
   notes:        string | null;
   lines: Array<{
-    itemId:      number | null;
-    description: string | null;
-    quantity:    number;
-    unitPrice:   number;
+    itemId:       number | null;
+    description:  string | null;
+    quantity:     number;
+    unitPrice:    number;
+    expectedDate: string | null;
   }>;
 }): Promise<PurchaseOrder> {
   const client = await pool.connect();
@@ -70,21 +70,21 @@ export async function createPurchaseOrder(data: {
 
     const { rows: [po] } = await client.query<PurchaseOrder>(
       `INSERT INTO purchase_orders
-         (doc_id, doc_number, doc_year, vendor_id, order_date, expected_date,
+         (doc_id, doc_number, doc_year, vendor_id, order_date,
           workflow, currency, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
       [docId, docNumber, year, data.vendorId, data.orderDate,
-       data.expectedDate, data.workflow, data.currency, data.notes]
+       data.workflow, data.currency, data.notes]
     );
 
     for (let i = 0; i < data.lines.length; i++) {
       const l = data.lines[i];
       await client.query(
         `INSERT INTO purchase_order_lines
-           (puo_id, line_seq, item_id, description, quantity, unit_price)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
-        [po.puo_id, i + 1, l.itemId, l.description, l.quantity, l.unitPrice]
+           (puo_id, line_seq, item_id, description, quantity, unit_price, expected_date)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [po.puo_id, i + 1, l.itemId, l.description, l.quantity, l.unitPrice, l.expectedDate ?? null]
       );
     }
 

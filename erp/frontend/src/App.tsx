@@ -6,6 +6,7 @@ import { geTheme } from './config/theme';
 import { AuthGuard } from './auth/AuthGuard';
 import { AppShell } from './layout/AppShell';
 import { VendorList }        from './pages/purchase/VendorList';
+import { ItemList }          from './pages/purchase/ItemList';
 import { POList }            from './pages/purchase/POList';
 import { POCreate }          from './pages/purchase/POCreate';
 import { PODetail }          from './pages/purchase/PODetail';
@@ -31,6 +32,7 @@ export default function App() {
                 <Route index element={<Navigate to="/purchase/orders" replace />} />
                 {/* Purchases */}
                 <Route path="purchase/vendors"       element={<VendorList />} />
+                <Route path="purchase/items"         element={<ItemList />} />
                 <Route path="purchase/orders"        element={<POList />} />
                 <Route path="purchase/orders/new"    element={<POCreate />} />
                 <Route path="purchase/orders/:docId" element={<PODetail />} />

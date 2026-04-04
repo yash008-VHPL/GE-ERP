@@ -11,14 +11,21 @@ import type { Vendor, Item } from '../../types/purchase';
 
 const { Title } = Typography;
 
-interface LineItem { key: number; itemId?: number; description?: string; quantity: number; unitPrice: number; }
+interface LineItem {
+  key:          number;
+  itemId?:      number;
+  description?: string;
+  quantity:     number;
+  unitPrice:    number;
+  expectedDate: dayjs.Dayjs | null;
+}
 
 export function POCreate() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [form]      = Form.useForm() as any[];
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [items, setItems]     = useState<Item[]>([]);
-  const [lines, setLines]     = useState<LineItem[]>([{ key: 0, quantity: 1, unitPrice: 0 }]);
+  const [lines, setLines]     = useState<LineItem[]>([{ key: 0, quantity: 1, unitPrice: 0, expectedDate: null }]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -31,8 +38,10 @@ export function POCreate() {
   const onVendorChange = (id: number) => {
     const v = vendors.find(x => x.vendor_id === id) ?? null;
     setSelectedVendor(v);
-    form.setFieldsValue({ workflow: v?.credit_terms ? 'CREDIT' : 'PREPAY' });
-    form.setFieldsValue({ currency: v?.currency ?? 'USD' });
+    form.setFieldsValue({
+      workflow: v?.credit_terms ? 'CREDIT' : 'PREPAY',
+      currency: v?.currency ?? 'USD',
+    });
   };
 
   const updateLine = (key: number, field: keyof LineItem, value: unknown) => {
@@ -50,7 +59,7 @@ export function POCreate() {
 
   const lineColumns = [
     {
-      title: 'Item', width: '28%',
+      title: 'Item', width: '22%',
       render: (_: unknown, row: LineItem) => (
         <Select showSearch optionFilterProp="label" style={{ width: '100%' }}
           options={items.map(i => ({ value: i.item_id, label: `${i.item_code} — ${i.item_name}` }))}
@@ -59,26 +68,41 @@ export function POCreate() {
       ),
     },
     {
-      title: 'Description', width: '30%',
+      title: 'Description', width: '24%',
       render: (_: unknown, row: LineItem) => (
         <Input value={row.description} onChange={e => updateLine(row.key, 'description', e.target.value)} />
       ),
     },
     {
-      title: 'Qty', width: '12%',
+      title: 'Qty', width: '9%',
       render: (_: unknown, row: LineItem) => (
-        <InputNumber min={0.0001} value={row.quantity} onChange={(v: number | null) => updateLine(row.key, 'quantity', v ?? 1)} style={{ width: '100%' }} />
+        <InputNumber min={0.0001} value={row.quantity}
+          onChange={(v: number | null) => updateLine(row.key, 'quantity', v ?? 1)}
+          style={{ width: '100%' }} />
       ),
     },
     {
-      title: 'Unit Price', width: '15%',
+      title: 'Unit Price', width: '12%',
       render: (_: unknown, row: LineItem) => (
-        <InputNumber min={0} precision={4} value={row.unitPrice} onChange={(v: number | null) => updateLine(row.key, 'unitPrice', v ?? 0)} style={{ width: '100%' }} />
+        <InputNumber min={0} precision={4} value={row.unitPrice}
+          onChange={(v: number | null) => updateLine(row.key, 'unitPrice', v ?? 0)}
+          style={{ width: '100%' }} />
       ),
     },
-    { title: 'Amount', width: '12%', render: (_: unknown, row: LineItem) => <strong>{lineTotal(row)}</strong> },
     {
-      title: '', width: '3%',
+      title: 'Expected Delivery', width: '18%',
+      render: (_: unknown, row: LineItem) => (
+        <DatePicker
+          value={row.expectedDate}
+          onChange={v => updateLine(row.key, 'expectedDate', v)}
+          style={{ width: '100%' }}
+          format="DD MMM YYYY"
+        />
+      ),
+    },
+    { title: 'Amount', width: '11%', render: (_: unknown, row: LineItem) => <strong>{lineTotal(row)}</strong> },
+    {
+      title: '', width: '4%',
       render: (_: unknown, row: LineItem) => (
         <Button danger size="small" icon={<DeleteOutlined />}
           onClick={() => setLines(p => p.filter(l => l.key !== row.key))}
@@ -93,13 +117,18 @@ export function POCreate() {
     setSubmitting(true);
     try {
       const payload = {
-        vendorId:     values.vendorId,
-        workflow:     values.workflow,
-        orderDate:    dayjs(values.orderDate as dayjs.Dayjs).format('YYYY-MM-DD'),
-        expectedDate: values.expectedDate ? dayjs(values.expectedDate as dayjs.Dayjs).format('YYYY-MM-DD') : null,
-        currency:     values.currency,
-        notes:        values.notes ?? null,
-        lines:        lines.map(l => ({ itemId: l.itemId ?? null, description: l.description ?? null, quantity: l.quantity, unitPrice: l.unitPrice })),
+        vendorId:  values.vendorId,
+        workflow:  values.workflow,
+        orderDate: dayjs(values.orderDate as dayjs.Dayjs).format('YYYY-MM-DD'),
+        currency:  values.currency,
+        notes:     values.notes ?? null,
+        lines:     lines.map(l => ({
+          itemId:       l.itemId ?? null,
+          description:  l.description ?? null,
+          quantity:     l.quantity,
+          unitPrice:    l.unitPrice,
+          expectedDate: l.expectedDate ? l.expectedDate.format('YYYY-MM-DD') : null,
+        })),
       };
       const { data } = await purchaseApi.post('/purchase-orders', payload);
       message.success(`Created ${data.data.doc_id}`);
@@ -116,11 +145,14 @@ export function POCreate() {
       <Title level={4}>New Purchase Order</Title>
 
       {selectedVendor && !selectedVendor.credit_terms && (
-        <Alert type="warning" showIcon message="This vendor requires prepayment. A Vendor Prepayment (VPr) will be needed before goods are received." style={{ marginBottom: 16 }} />
+        <Alert type="warning" showIcon
+          message="This vendor requires prepayment. A Vendor Prepayment (VPr) will be needed before goods are received."
+          style={{ marginBottom: 16 }} />
       )}
 
-      <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ workflow: 'CREDIT', currency: 'USD', orderDate: dayjs() }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      <Form form={form} layout="vertical" onFinish={onFinish}
+        initialValues={{ workflow: 'CREDIT', currency: 'USD', orderDate: dayjs() }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
           <Form.Item name="vendorId" label="Vendor" rules={[{ required: true }]}>
             <Select showSearch optionFilterProp="label"
               options={vendors.map(v => ({ value: v.vendor_id, label: v.vendor_name }))}
@@ -128,18 +160,18 @@ export function POCreate() {
             />
           </Form.Item>
           <Form.Item name="workflow" label="Workflow" rules={[{ required: true }]}>
-            <Select options={[{ value: 'CREDIT', label: 'Credit (net terms)' }, { value: 'PREPAY', label: 'Prepayment required' }]} />
+            <Select options={[
+              { value: 'CREDIT', label: 'Credit (net terms)' },
+              { value: 'PREPAY', label: 'Prepayment required' },
+            ]} />
           </Form.Item>
           <Form.Item name="currency" label="Currency" rules={[{ required: true }]}>
             <Select options={['USD','EUR','GBP','SGD','AED'].map(c => ({ value: c, label: c }))} />
           </Form.Item>
           <Form.Item name="orderDate" label="Order Date" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />
           </Form.Item>
-          <Form.Item name="expectedDate" label="Expected Delivery">
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="notes" label="Notes">
+          <Form.Item name="notes" label="Notes" style={{ gridColumn: 'span 4' }}>
             <Input.TextArea rows={1} />
           </Form.Item>
         </div>
@@ -149,7 +181,8 @@ export function POCreate() {
         <Table dataSource={lines} columns={lineColumns} rowKey="key" pagination={false} size="small" />
 
         <Space style={{ marginTop: 12 }}>
-          <Button icon={<PlusOutlined />} onClick={() => setLines(p => [...p, { key: Date.now(), quantity: 1, unitPrice: 0 }])}>
+          <Button icon={<PlusOutlined />}
+            onClick={() => setLines(p => [...p, { key: Date.now(), quantity: 1, unitPrice: 0, expectedDate: null }])}>
             Add Line
           </Button>
         </Space>

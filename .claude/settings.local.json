@@ -27,7 +27,11 @@
       "Read(//private/tmp/**)",
       "Bash(pandoc \"/Users/yash008/Documents/Coding/Coding/GE Apps/Doc Templates/GE PO Template .docx\" -o /tmp/ge_po.md --track-changes=all)",
       "Read(//tmp/**)",
-      "Bash(node_modules/.bin/tsc --noEmit)"
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(grep -v \"\\\\.d\\\\.ts$\")",
+      "Bash(grep -v \"\\\\.js$\")",
+      "WebFetch(domain:ge-erp-api.azurewebsites.net)",
+      "WebFetch(domain:ge-erp-api-eehufufrb0a5exa3.westeurope-01.azurewebsites.net)"
     ]
   }
 }

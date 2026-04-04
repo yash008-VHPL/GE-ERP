@@ -5,7 +5,7 @@ import {
   FileTextOutlined, InboxOutlined, BankOutlined, DollarOutlined,
   LogoutOutlined, UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined,
   ShoppingCartOutlined, SendOutlined, FileDoneOutlined,
-  TeamOutlined, ShopOutlined,
+  TeamOutlined, ShopOutlined, AppstoreOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
@@ -19,8 +19,9 @@ const NAV_ITEMS: MenuProps['items'] = [
     label: 'Purchases',
     type: 'group',
     children: [
-      { key: '/purchase/vendors',  icon: <ShopOutlined />,     label: 'Vendors' },
-      { key: '/purchase/orders',   icon: <FileTextOutlined />, label: 'Purchase Orders' },
+      { key: '/purchase/vendors',  icon: <ShopOutlined />,      label: 'Vendors' },
+      { key: '/purchase/items',    icon: <AppstoreOutlined />,  label: 'Items' },
+      { key: '/purchase/orders',   icon: <FileTextOutlined />,  label: 'Purchase Orders' },
       { key: '/purchase/receipts', icon: <InboxOutlined />,    label: 'Item Receipts' },
       { key: '/purchase/bills',    icon: <BankOutlined />,     label: 'Vendor Bills' },
       { key: '/purchase/payments', icon: <DollarOutlined />,   label: 'Payments' },

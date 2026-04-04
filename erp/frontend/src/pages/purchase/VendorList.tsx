@@ -162,7 +162,11 @@ export function VendorList() {
               <Select options={CURRENCIES.map(c => ({ value: c, label: c }))} />
             </Form.Item>
             <Form.Item name="credit_days" label="Credit Days">
-              <InputNumber min={0} style={{ width: '100%' }} />
+              <InputNumber min={0} style={{ width: '100%' }}
+                onChange={(v: number | null) => {
+                  if ((v ?? 0) > 0) form.setFieldsValue({ credit_terms: true });
+                }}
+              />
             </Form.Item>
             <Form.Item name="credit_terms" label="Credit Terms" valuePropName="checked">
               <Switch checkedChildren="Credit" unCheckedChildren="Prepay" />
