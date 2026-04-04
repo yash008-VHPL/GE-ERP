@@ -37,9 +37,10 @@ itemReceiptsRouter.get('/:docId', async (req, res, next) => {
     if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
 
     const { rows: lines } = await pool.query(`
-      SELECT irl.*, pol.description, pol.item_code, pol.uom
+      SELECT irl.*, pol.description, i.item_code, i.uom
       FROM item_receipt_lines irl
       JOIN purchase_order_lines pol ON pol.pol_id = irl.pol_id
+      LEFT JOIN items i             ON i.item_id  = pol.item_id
       WHERE irl.itr_id = $1
       ORDER BY irl.line_seq
     `, [rows[0].itr_id]);
@@ -56,24 +57,25 @@ itemReceiptsRouter.post('/', async (req, res, next) => {
 
     const { puoId, receiptDate, notes, lines } = req.body;
 
-    // Get next doc number
+    // Get next doc number for ItR series
     const year = new Date(receiptDate).getFullYear();
     const { rows: [seq] } = await client.query(
       `SELECT next_doc_number('ItR', $1) AS num`, [year]
     );
 
-    // Get the PO's doc_number to inherit chain
+    // Get vendor_id from the PO (required NOT NULL on item_receipts)
     const { rows: [po] } = await client.query(
-      `SELECT doc_number FROM purchase_orders WHERE puo_id = $1`, [puoId]
+      `SELECT vendor_id FROM purchase_orders WHERE puo_id = $1`, [puoId]
     );
+    if (!po) throw new Error(`Purchase order ${puoId} not found`);
 
-    const docId = `GE-ItR-${String(po.doc_number).padStart(4,'0')}-${year}`;
+    const docId = `GE-ItR-${String(seq.num).padStart(4,'0')}-${year}`;
 
     const { rows: [itr] } = await client.query(`
-      INSERT INTO item_receipts (doc_id, doc_number, doc_year, puo_id, receipt_date, notes, status)
-      VALUES ($1, $2, $3, $4, $5, $6, 'DRAFT')
+      INSERT INTO item_receipts (doc_id, doc_number, doc_year, puo_id, vendor_id, receipt_date, notes, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'DRAFT')
       RETURNING *
-    `, [docId, seq.num, year, puoId, receiptDate, notes ?? null]);
+    `, [docId, seq.num, year, puoId, po.vendor_id, receiptDate, notes ?? null]);
 
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i];
