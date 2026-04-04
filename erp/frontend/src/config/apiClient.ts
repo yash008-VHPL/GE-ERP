@@ -1,13 +1,23 @@
 import axios from 'axios';
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { msalInstance } from './msalInstance';
+import { loginRequest } from './msalConfig';
 
 const API_SCOPES = [`api://${import.meta.env.VITE_AZURE_CLIENT_ID}/access_as_user`];
 
-/** Silently acquire a token — throws a readable error on failure */
+// Guard so we only trigger one redirect even if multiple API calls fail at once
+let redirectingToLogin = false;
+
+/** Silently acquire a token — redirects to login if token is expired or unrefreshable */
 async function getToken(): Promise<string> {
   const accounts = msalInstance.getAllAccounts();
-  if (!accounts[0]) throw new Error('No signed-in user');
+  if (!accounts[0]) {
+    if (!redirectingToLogin) {
+      redirectingToLogin = true;
+      await msalInstance.loginRedirect(loginRequest);
+    }
+    throw new Error('Redirecting to login...');
+  }
 
   try {
     const result = await msalInstance.acquireTokenSilent({
@@ -17,12 +27,14 @@ async function getToken(): Promise<string> {
     });
     return result.accessToken;
   } catch (e) {
-    if (e instanceof InteractionRequiredAuthError) {
-      throw new Error('Session expired — please sign out and sign in again.');
+    // Token expired or silent iframe blocked by tracking prevention — force fresh login
+    if (!redirectingToLogin) {
+      redirectingToLogin = true;
+      await msalInstance.logoutRedirect();
     }
-    // timed_out / monitor_window_timeout: tracking prevention blocked silent iframe
-    // Surface a clear message rather than triggering a redirect loop
-    throw new Error('Token refresh failed — please sign out and sign in again.');
+    throw e instanceof InteractionRequiredAuthError
+      ? new Error('Session expired — signing you out...')
+      : new Error('Token refresh failed — signing you out...');
   }
 }
 
