@@ -37,9 +37,13 @@ export function POList() {
 
   const handlePdf = async (docId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const response = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
-    const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-    window.open(url, '_blank');
+    try {
+      const response = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+    } catch {
+      message.error('Failed to generate PDF — check console for details');
+    }
   };
 
   const columns = [

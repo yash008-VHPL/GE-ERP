@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Descriptions, Table, Button, Space, Steps, Tag,
-  Typography, Spin, Divider, message,
+  Typography, Spin, Divider, message, Popconfirm,
 } from 'antd';
-import { FilePdfOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { FilePdfOutlined, ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi, spApi } from '../../config/apiClient';
 import { StatusTag } from '../../components/purchase/StatusTag';
@@ -30,9 +30,23 @@ export function PODetail() {
   }, [docId]);
 
   const handlePdf = async () => {
-    const r = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
-    const url = URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
-    window.open(url, '_blank');
+    try {
+      const r = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+    } catch {
+      message.error('Failed to generate PDF — please try again');
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await purchaseApi.delete(`/purchase-orders/${docId}`);
+      message.success(`${docId} deleted`);
+      navigate('/purchase/orders');
+    } catch {
+      message.error('Failed to delete purchase order');
+    }
   };
 
   const confirmPO = async () => {
@@ -79,8 +93,14 @@ export function PODetail() {
         <Descriptions.Item label="Workflow"><Tag>{po.workflow}</Tag></Descriptions.Item>
         <Descriptions.Item label="Currency">{po.currency}</Descriptions.Item>
         <Descriptions.Item label="Order Date">{dayjs(po.order_date).format('DD MMM YYYY')}</Descriptions.Item>
-        <Descriptions.Item label="Expected Delivery">{po.expected_date ? dayjs(po.expected_date).format('DD MMM YYYY') : '—'}</Descriptions.Item>
-        <Descriptions.Item label="Notes">{po.notes ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label="Shipping Method">{po.shipping_method ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label="Incoterms">
+          {po.incoterms
+            ? (po.incoterms_port ? `${po.incoterms} — ${po.incoterms_port}` : po.incoterms)
+            : '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Payment Terms">{po.payment_terms ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label="Notes" span={2}>{po.notes ?? '—'}</Descriptions.Item>
       </Descriptions>
 
       <Table
@@ -120,6 +140,15 @@ export function PODetail() {
         {po.status === 'DRAFT' && (
           <Button type="primary" onClick={confirmPO}>Confirm Purchase Order</Button>
         )}
+        <Popconfirm
+          title={`Delete ${po.doc_id}?`}
+          description="This will permanently remove the PO and all its lines."
+          okText="Delete" okButtonProps={{ danger: true }}
+          cancelText="Cancel"
+          onConfirm={handleDelete}
+        >
+          <Button danger icon={<DeleteOutlined />}>Delete PO</Button>
+        </Popconfirm>
       </Space>
     </>
   );

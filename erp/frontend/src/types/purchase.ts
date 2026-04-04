@@ -38,21 +38,29 @@ export interface PurchaseOrderLine {
 }
 
 export interface PurchaseOrder {
-  puo_id:        number;
-  doc_id:        string;
-  doc_number:    number;
-  doc_year:      number;
-  vendor_id:     number;
-  vendor_name:   string;
-  vendor_code:   string;
-  order_date:    string;
-  expected_date: string | null;
-  workflow:      'CREDIT' | 'PREPAY';
-  status:        string;
-  currency:      string;
-  notes:         string | null;
-  created_at:    string;
-  lines?:        PurchaseOrderLine[];
+  puo_id:           number;
+  doc_id:           string;
+  doc_number:       number;
+  doc_year:         number;
+  vendor_id:        number;
+  vendor_name:      string;
+  vendor_code:      string;
+  vendor_contact?:  string | null;
+  vendor_email?:    string | null;
+  vendor_phone?:    string | null;
+  vendor_address?:  string | null;
+  order_date:       string;
+  expected_date:    string | null;
+  workflow:         'CREDIT' | 'PREPAY';
+  status:           string;
+  currency:         string;
+  notes:            string | null;
+  shipping_method:  string | null;
+  incoterms:        string | null;
+  incoterms_port:   string | null;
+  payment_terms:    string | null;
+  created_at:       string;
+  lines?:           PurchaseOrderLine[];
 }
 
 export interface VendorBill {

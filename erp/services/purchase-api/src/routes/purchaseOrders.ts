@@ -61,16 +61,56 @@ purchaseOrdersRouter.patch('/:docId/status', requireAuth, async (req: Request, r
   } catch (e) { next(e); }
 });
 
-// DELETE /purchase-orders/:docId — hard delete (testing only)
+// DELETE /purchase-orders/:docId — hard delete (admin only)
+// Cascades: receipt lines → receipts → PO lines → PO
+// Any vendor bills that reference the PO have their puo_id nullified (bills are financial records)
 purchaseOrdersRouter.delete('/:docId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  const client = await pool.connect();
   try {
-    const { rows } = await pool.query(
-      `DELETE FROM purchase_orders WHERE doc_id = $1 RETURNING doc_id`,
+    await client.query('BEGIN');
+
+    // Resolve puo_id
+    const { rows: poRows } = await client.query(
+      `SELECT puo_id FROM purchase_orders WHERE doc_id = $1`,
       [req.params.docId]
     );
-    if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
-    res.json({ success: true, deleted: rows[0].doc_id });
-  } catch (e) { next(e); }
+    if (!poRows[0]) {
+      await client.query('ROLLBACK');
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+    const puoId = poRows[0].puo_id;
+
+    // 1. Delete item receipt lines for any receipts on this PO
+    await client.query(
+      `DELETE FROM item_receipt_lines
+         WHERE itr_id IN (SELECT itr_id FROM item_receipts WHERE puo_id = $1)`,
+      [puoId]
+    );
+
+    // 2. Delete item receipts
+    await client.query(`DELETE FROM item_receipts WHERE puo_id = $1`, [puoId]);
+
+    // 3. Detach any vendor bills (keep the bill, just unlink the PO)
+    await client.query(
+      `UPDATE vendor_bills SET puo_id = NULL WHERE puo_id = $1`,
+      [puoId]
+    );
+
+    // 4. Delete PO lines
+    await client.query(`DELETE FROM purchase_order_lines WHERE puo_id = $1`, [puoId]);
+
+    // 5. Delete the PO
+    await client.query(`DELETE FROM purchase_orders WHERE puo_id = $1`, [puoId]);
+
+    await client.query('COMMIT');
+    res.json({ success: true, deleted: req.params.docId });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    next(e);
+  } finally {
+    client.release();
+  }
 });
 
 // GET /purchase-orders/:docId/pdf — stream PDF to browser
