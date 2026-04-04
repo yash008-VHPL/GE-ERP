@@ -12,6 +12,7 @@ import { POCreate }          from './pages/purchase/POCreate';
 import { PODetail }          from './pages/purchase/PODetail';
 import { ReceiptList }       from './pages/purchase/ReceiptList';
 import { ReceiptCreate }     from './pages/purchase/ReceiptCreate';
+import { ReceiptDetail }     from './pages/purchase/ReceiptDetail';
 import { BillList }          from './pages/purchase/BillList';
 import { PaymentList }       from './pages/purchase/PaymentList';
 import { ClientList }        from './pages/sales/ClientList';
@@ -36,8 +37,9 @@ export default function App() {
                 <Route path="purchase/orders"        element={<POList />} />
                 <Route path="purchase/orders/new"    element={<POCreate />} />
                 <Route path="purchase/orders/:docId" element={<PODetail />} />
-                <Route path="purchase/receipts"      element={<ReceiptList />} />
-                <Route path="purchase/receipts/new"  element={<ReceiptCreate />} />
+                <Route path="purchase/receipts"          element={<ReceiptList />} />
+                <Route path="purchase/receipts/new"      element={<ReceiptCreate />} />
+                <Route path="purchase/receipts/:docId"   element={<ReceiptDetail />} />
                 <Route path="purchase/bills"         element={<BillList />} />
                 <Route path="purchase/payments"      element={<PaymentList />} />
                 {/* Sales */}
