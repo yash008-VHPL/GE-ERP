@@ -20,7 +20,12 @@ export function formatDocId(docType: string, num: number, year: number): string 
 /** Fetch a full PO with lines and vendor details */
 export async function getPurchaseOrder(docId: string): Promise<PurchaseOrder | null> {
   const { rows } = await pool.query<PurchaseOrder>(
-    `SELECT p.*, v.vendor_name, v.vendor_code
+    `SELECT p.*,
+            v.vendor_name, v.vendor_code,
+            v.contact_name AS vendor_contact,
+            v.email        AS vendor_email,
+            v.phone        AS vendor_phone,
+            v.address      AS vendor_address
        FROM purchase_orders p
        JOIN vendors v ON p.vendor_id = v.vendor_id
       WHERE p.doc_id = $1`,
@@ -43,11 +48,15 @@ export async function getPurchaseOrder(docId: string): Promise<PurchaseOrder | n
 
 /** Create a PO and its lines atomically */
 export async function createPurchaseOrder(data: {
-  vendorId:     number;
-  workflow:     'CREDIT' | 'PREPAY';
-  orderDate:    string;
-  currency:     string;
-  notes:        string | null;
+  vendorId:       number;
+  workflow:       'CREDIT' | 'PREPAY';
+  orderDate:      string;
+  currency:       string;
+  notes:          string | null;
+  shippingMethod: string | null;
+  incoterms:      string | null;
+  incotermPort:   string | null;
+  paymentTerms:   string | null;
   lines: Array<{
     itemId:       number | null;
     description:  string | null;
@@ -71,11 +80,14 @@ export async function createPurchaseOrder(data: {
     const { rows: [po] } = await client.query<PurchaseOrder>(
       `INSERT INTO purchase_orders
          (doc_id, doc_number, doc_year, vendor_id, order_date,
-          workflow, currency, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+          workflow, currency, notes,
+          shipping_method, incoterms, incoterms_port, payment_terms)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING *`,
       [docId, docNumber, year, data.vendorId, data.orderDate,
-       data.workflow, data.currency, data.notes]
+       data.workflow, data.currency, data.notes,
+       data.shippingMethod ?? null, data.incoterms ?? null,
+       data.incotermPort ?? null, data.paymentTerms ?? null]
     );
 
     for (let i = 0; i < data.lines.length; i++) {

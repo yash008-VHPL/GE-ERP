@@ -11,6 +11,24 @@ import type { Vendor, Item } from '../../types/purchase';
 
 const { Title } = Typography;
 
+const INCOTERMS_OPTIONS = [
+  { value: 'EXW',  label: 'EXW — Ex Works' },
+  { value: 'FOB',  label: 'FOB — Free on Board' },
+  { value: 'CIF',  label: 'CIF — Cost, Insurance & Freight' },
+  { value: 'DAP',  label: 'DAP — Delivered at Place' },
+  { value: 'DDP',  label: 'DDP — Delivered Duty Paid' },
+];
+
+const PAYMENT_TERMS_OPTIONS = [
+  { value: 'Advance',                                        label: 'Advance' },
+  { value: 'Cash against documents (CAD)',                   label: 'Cash against documents (CAD)' },
+  { value: 'Against scan copy of shipping documents',        label: 'Against scan copy of shipping documents' },
+  { value: '30% Advance & 70% against scan copy documents', label: '30% Advance & 70% against scan copy documents' },
+  { value: '30d credit',                                     label: '30d credit' },
+  { value: '60d credit',                                     label: '60d credit' },
+  { value: '90d credit',                                     label: '90d credit' },
+];
+
 interface LineItem {
   key:          number;
   itemId?:      number;
@@ -27,7 +45,8 @@ export function POCreate() {
   const [items, setItems]     = useState<Item[]>([]);
   const [lines, setLines]     = useState<LineItem[]>([{ key: 0, quantity: 1, unitPrice: 0, expectedDate: null }]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting]       = useState(false);
+  const [incotermVal, setIncotermVal]     = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,12 +136,16 @@ export function POCreate() {
     setSubmitting(true);
     try {
       const payload = {
-        vendorId:  values.vendorId,
-        workflow:  values.workflow,
-        orderDate: dayjs(values.orderDate as dayjs.Dayjs).format('YYYY-MM-DD'),
-        currency:  values.currency,
-        notes:     values.notes ?? null,
-        lines:     lines.map(l => ({
+        vendorId:       values.vendorId,
+        workflow:       values.workflow,
+        orderDate:      dayjs(values.orderDate as dayjs.Dayjs).format('YYYY-MM-DD'),
+        currency:       values.currency,
+        notes:          values.notes ?? null,
+        shippingMethod: values.shippingMethod ?? null,
+        incoterms:      values.incoterms ?? null,
+        incotermPort:   values.incotermPort ?? null,
+        paymentTerms:   values.paymentTerms ?? null,
+        lines:          lines.map(l => ({
           itemId:       l.itemId ?? null,
           description:  l.description ?? null,
           quantity:     l.quantity,
@@ -171,6 +194,33 @@ export function POCreate() {
           <Form.Item name="orderDate" label="Order Date" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />
           </Form.Item>
+
+          {/* ── Shipping / Trade Terms ── */}
+          <Form.Item name="shippingMethod" label="Shipping Method">
+            <Input placeholder="e.g. Sea Freight, Air Freight, Road" />
+          </Form.Item>
+          <Form.Item name="incoterms" label="Incoterms">
+            <Select
+              allowClear
+              placeholder="Select incoterms"
+              options={INCOTERMS_OPTIONS}
+              onChange={(v: string | null) => {
+                setIncotermVal(v ?? null);
+                if (v !== 'FOB' && v !== 'CIF') form.setFieldsValue({ incotermPort: undefined });
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="incotermPort"
+            label="Port"
+            style={{ display: (incotermVal === 'FOB' || incotermVal === 'CIF') ? undefined : 'none' }}
+          >
+            <Input placeholder="Port name" />
+          </Form.Item>
+          <Form.Item name="paymentTerms" label="Payment Terms">
+            <Select allowClear placeholder="Select terms" options={PAYMENT_TERMS_OPTIONS} />
+          </Form.Item>
+
           <Form.Item name="notes" label="Notes" style={{ gridColumn: 'span 4' }}>
             <Input.TextArea rows={1} />
           </Form.Item>

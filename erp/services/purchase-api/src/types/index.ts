@@ -27,37 +27,46 @@ export type PuOWorkflow = 'CREDIT' | 'PREPAY';
 export type PuOStatus   = 'DRAFT' | 'CONFIRMED' | 'PARTIALLY_RECEIVED' | 'FULLY_RECEIVED' | 'BILLED' | 'CLOSED' | 'CANCELLED';
 
 export interface PurchaseOrderLine {
-  pol_id:       number;
-  puo_id:       number;
-  line_seq:     number;
-  item_id:      number | null;
-  item_code?:   string;
-  item_name?:   string;
-  uom?:         string;
-  description:  string | null;
-  quantity:     string;
-  unit_price:   string;
-  line_amount:  string;
-  qty_received: string;
-  qty_billed:   string;
+  pol_id:        number;
+  puo_id:        number;
+  line_seq:      number;
+  item_id:       number | null;
+  item_code?:    string;
+  item_name?:    string;
+  uom?:          string;
+  description:   string | null;
+  quantity:      string;
+  unit_price:    string;
+  line_amount:   string;
+  qty_received:  string;
+  qty_billed:    string;
+  expected_date: string | null;
 }
 
 export interface PurchaseOrder {
-  puo_id:         number;
-  doc_id:         string;
-  doc_number:     number;
-  doc_year:       number;
-  vendor_id:      number;
-  vendor_name?:   string;
-  vendor_code?:   string;
-  order_date:     string;
-  expected_date:  string | null;
-  workflow:       PuOWorkflow;
-  status:         PuOStatus;
-  currency:       string;
-  notes:          string | null;
-  created_at:     string;
-  lines?:         PurchaseOrderLine[];
+  puo_id:           number;
+  doc_id:           string;
+  doc_number:       number;
+  doc_year:         number;
+  vendor_id:        number;
+  vendor_name?:     string;
+  vendor_code?:     string;
+  vendor_contact?:  string | null;
+  vendor_email?:    string | null;
+  vendor_phone?:    string | null;
+  vendor_address?:  string | null;
+  order_date:       string;
+  expected_date:    string | null;
+  workflow:         PuOWorkflow;
+  status:           PuOStatus;
+  currency:         string;
+  notes:            string | null;
+  shipping_method:  string | null;
+  incoterms:        string | null;
+  incoterms_port:   string | null;
+  payment_terms:    string | null;
+  created_at:       string;
+  lines?:           PurchaseOrderLine[];
 }
 
 // ── Vendor Bills ──────────────────────────────────────────────────────────────

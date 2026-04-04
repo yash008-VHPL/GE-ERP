@@ -206,10 +206,10 @@ export function PODocument({ po }: Props) {
 
         {/* ── Vendor detail rows ── */}
         {[
-          { key: 'Contact Name:', val: '' },
-          { key: 'Address:', val: '' },
-          { key: 'Contact No:', val: '' },
-          { key: 'Email ID:', val: '' },
+          { key: 'Contact Name:', val: po.vendor_contact ?? '' },
+          { key: 'Address:',      val: po.vendor_address ?? '' },
+          { key: 'Contact No:',   val: po.vendor_phone   ?? '' },
+          { key: 'Email ID:',     val: po.vendor_email   ?? '' },
         ].map(row => (
           <View key={row.key} style={s.vendorRow}>
             <View style={{ width: '50%', borderRightWidth: 1, borderRightColor: C.borderDark }}>
@@ -229,9 +229,11 @@ export function PODocument({ po }: Props) {
         <View style={s.refRow}>
           {[
             { key: 'REFERENCE',       val: po.doc_id },
-            { key: 'SHIPMENT METHOD', val: '' },
-            { key: 'SHIPPING TERMS',  val: '' },
-            { key: 'PAYMENT TERMS',   val: po.workflow === 'CREDIT' ? 'Net terms' : 'Prepayment' },
+            { key: 'SHIPMENT METHOD', val: po.shipping_method ?? '' },
+            { key: 'INCOTERMS',       val: po.incoterms
+                ? (po.incoterms_port ? `${po.incoterms} — ${po.incoterms_port}` : po.incoterms)
+                : '' },
+            { key: 'PAYMENT TERMS',   val: po.payment_terms ?? '' },
           ].map((c, i, arr) => (
             <View key={c.key} style={i < arr.length - 1 ? s.refCell : s.refCellLast}>
               <Text style={s.refKey}>{c.key}</Text>
@@ -254,7 +256,7 @@ export function PODocument({ po }: Props) {
             <Text style={[s.tblCell, s.colProduct]}>
               {l.line_seq}.{'  '}{l.description ?? l.item_name ?? ''}
             </Text>
-            <Text style={[s.tblCell, s.colShipDate]}> </Text>
+            <Text style={[s.tblCell, s.colShipDate]}>{l.expected_date ?? ''}</Text>
             <Text style={[s.tblCell, s.colQty]}>{fmt(l.quantity)}</Text>
             <Text style={[s.tblCell, s.colPrice]}>{po.currency} {fmt(l.unit_price)}</Text>
             <Text style={[s.tblCell, s.colTotal]}>{po.currency} {fmt(l.line_amount)}</Text>
