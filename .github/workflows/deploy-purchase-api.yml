@@ -47,5 +47,5 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ge-erp-api-eehufufrb0a5exa3
+          app-name: ge-erp-api
           package: erp/services/purchase-api
