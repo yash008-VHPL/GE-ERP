@@ -216,15 +216,17 @@ export function PODocument({ po }: Props) {
           { key: 'Email ID:',     val: po.vendor_email   ?? '' },
         ].map(row => (
           <View key={row.key} style={s.vendorRow}>
-            <View style={{ width: '50%', borderRightWidth: 1, borderRightColor: C.borderDark }}>
-              {/* left column intentionally blank — buyer address already shown above */}
-              <Text style={{ padding: '3 7', fontSize: 8 }}> </Text>
+            {/* left half — blank (buyer info already above) */}
+            <View style={{ width: '50%', borderRightWidth: 1, borderRightColor: C.borderDark, padding: '3 7' }}>
+              <Text style={{ fontSize: 8 }}> </Text>
             </View>
-            <View style={{ width: '25%', borderRightWidth: 0.5, borderRightColor: C.borderDark, padding: '3 7' }}>
-              <Text style={s.vendorKey}>{row.key}</Text>
+            {/* label — 18% of page */}
+            <View style={{ width: '18%', borderRightWidth: 0.5, borderRightColor: C.borderDark, padding: '3 7' }}>
+              <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.black }}>{row.key}</Text>
             </View>
-            <View style={{ width: '25%', padding: '3 7' }}>
-              <Text style={s.vendorVal}>{row.val}</Text>
+            {/* value — remaining 32% of page */}
+            <View style={{ width: '32%', padding: '3 7' }}>
+              <Text style={{ fontSize: 8, color: C.black }}>{row.val}</Text>
             </View>
           </View>
         ))}
