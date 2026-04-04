@@ -80,10 +80,13 @@ itemReceiptsRouter.post('/', async (req, res, next) => {
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i];
       if (!l.quantityReceived || l.quantityReceived <= 0) continue;
+      // Pull unit_price from the PO line (required NOT NULL on receipt lines)
       await client.query(`
         INSERT INTO item_receipt_lines
-          (itr_id, pol_id, line_seq, quantity_received, batch_number, production_date)
-        VALUES ($1, $2, $3, $4, $5, $6)
+          (itr_id, pol_id, line_seq, qty_received, unit_price, batch_number, production_date)
+        VALUES ($1, $2, $3, $4,
+                (SELECT unit_price FROM purchase_order_lines WHERE pol_id = $2),
+                $5, $6)
       `, [itr.itr_id, l.polId, i + 1, l.quantityReceived, l.batchNumber ?? null, l.productionDate ?? null]);
     }
 
@@ -114,7 +117,7 @@ itemReceiptsRouter.patch('/:docId/status', async (req, res, next) => {
   try {
     const { status } = req.body;
     const { rows } = await pool.query(
-      `UPDATE item_receipts SET status = $1, updated_at = now()
+      `UPDATE item_receipts SET status = $1
        WHERE doc_id = $2 RETURNING *`,
       [status, req.params.docId]
     );
