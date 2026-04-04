@@ -41,8 +41,17 @@ export function POList() {
       const response = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       window.open(url, '_blank');
-    } catch {
-      message.error('Failed to generate PDF — check console for details');
+    } catch (err: unknown) {
+      const axErr = err as { response?: { data?: Blob } };
+      if (axErr?.response?.data instanceof Blob) {
+        try {
+          const text = await axErr.response.data.text();
+          const json = JSON.parse(text);
+          message.error(`PDF error: ${json.error ?? text}`);
+          return;
+        } catch { /* fall through */ }
+      }
+      message.error('Failed to generate PDF');
     }
   };
 

@@ -32,9 +32,26 @@ export function PODetail() {
   const handlePdf = async () => {
     try {
       const r = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
+      // If the server returned JSON error instead of a PDF, surface it
+      if (r.headers['content-type']?.includes('application/json')) {
+        const text = await (r.data as Blob).text();
+        const json = JSON.parse(text);
+        message.error(`PDF error: ${json.error ?? 'Unknown error'}`);
+        return;
+      }
       const url = URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
       window.open(url, '_blank');
-    } catch {
+    } catch (err: unknown) {
+      // axios error — try to read the response body for the real message
+      const axErr = err as { response?: { data?: Blob } };
+      if (axErr?.response?.data instanceof Blob) {
+        try {
+          const text = await axErr.response.data.text();
+          const json = JSON.parse(text);
+          message.error(`PDF error: ${json.error ?? text}`);
+          return;
+        } catch { /* fall through */ }
+      }
       message.error('Failed to generate PDF — please try again');
     }
   };

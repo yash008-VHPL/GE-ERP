@@ -119,10 +119,17 @@ purchaseOrdersRouter.get('/:docId/pdf', requireAuth, async (req: Request, res: R
     const po = await poService.getPurchaseOrder(req.params.docId);
     if (!po) { res.status(404).json({ error: 'Purchase order not found' }); return; }
 
-    const element = React.createElement(PODocument, { po });
+    let stream;
+    try {
+      const element = React.createElement(PODocument, { po });
+      stream = await renderToStream(element as Parameters<typeof renderToStream>[0]);
+    } catch (renderErr) {
+      const msg = renderErr instanceof Error ? renderErr.message : String(renderErr);
+      console.error('[PDF] renderToStream failed:', renderErr);
+      res.status(500).json({ error: `PDF render error: ${msg}` });
+      return;
+    }
 
-    // renderToStream accepts any React element; cast to satisfy strict typing
-    const stream = await renderToStream(element as Parameters<typeof renderToStream>[0]);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${po.doc_id}.pdf"`);
     stream.pipe(res);
