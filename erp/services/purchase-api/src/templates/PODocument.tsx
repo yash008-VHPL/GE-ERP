@@ -148,6 +148,10 @@ const s = StyleSheet.create({
 const fmt = (n: string | number) =>
   Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// pg returns DATE columns as JS Date objects — convert to YYYY-MM-DD string
+const fmtDate = (d: string | Date | null | undefined): string =>
+  d ? new Date(d as string | Date).toISOString().split('T')[0] : '';
+
 // Load logo once at module level (server-side)
 const LOGO_PATH = path.join(__dirname, '../assets/giiava-logo.png');
 const logoData  = fs.existsSync(LOGO_PATH) ? fs.readFileSync(LOGO_PATH) : null;
@@ -256,7 +260,7 @@ export function PODocument({ po }: Props) {
             <Text style={[s.tblCell, s.colProduct]}>
               {l.line_seq}.{'  '}{l.description ?? l.item_name ?? ''}
             </Text>
-            <Text style={[s.tblCell, s.colShipDate]}>{l.expected_date ?? ''}</Text>
+            <Text style={[s.tblCell, s.colShipDate]}>{fmtDate(l.expected_date)}</Text>
             <Text style={[s.tblCell, s.colQty]}>{fmt(l.quantity)}</Text>
             <Text style={[s.tblCell, s.colPrice]}>{po.currency} {fmt(l.unit_price)}</Text>
             <Text style={[s.tblCell, s.colTotal]}>{po.currency} {fmt(l.line_amount)}</Text>
