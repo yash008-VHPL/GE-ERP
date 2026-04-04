@@ -1,17 +1,13 @@
 import axios from 'axios';
-import { InteractionRequiredAuthError, BrowserAuthError } from '@azure/msal-browser';
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { msalInstance } from './msalInstance';
-import { loginRequest } from './msalConfig';
 
 const API_SCOPES = [`api://${import.meta.env.VITE_AZURE_CLIENT_ID}/access_as_user`];
 
-/** Silently acquire a token, falling back to redirect on any auth failure */
+/** Silently acquire a token — throws a readable error on failure */
 async function getToken(): Promise<string> {
   const accounts = msalInstance.getAllAccounts();
-  if (!accounts[0]) {
-    await msalInstance.loginRedirect(loginRequest);
-    throw new Error('Redirecting to login...');
-  }
+  if (!accounts[0]) throw new Error('No signed-in user');
 
   try {
     const result = await msalInstance.acquireTokenSilent({
@@ -21,15 +17,12 @@ async function getToken(): Promise<string> {
     });
     return result.accessToken;
   } catch (e) {
-    // timed_out = iframe blocked by tracking prevention; interaction_required = expired
-    if (
-      e instanceof InteractionRequiredAuthError ||
-      (e instanceof BrowserAuthError && (e.errorCode === 'timed_out' || e.errorCode === 'monitor_window_timeout'))
-    ) {
-      await msalInstance.acquireTokenRedirect({ scopes: API_SCOPES, account: accounts[0] });
-      throw new Error('Redirecting to re-authenticate...');
+    if (e instanceof InteractionRequiredAuthError) {
+      throw new Error('Session expired — please sign out and sign in again.');
     }
-    throw e;
+    // timed_out / monitor_window_timeout: tracking prevention blocked silent iframe
+    // Surface a clear message rather than triggering a redirect loop
+    throw new Error('Token refresh failed — please sign out and sign in again.');
   }
 }
 
