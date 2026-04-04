@@ -18,12 +18,12 @@ itemsRouter.get('/', async (_req, res, next) => {
 // POST /items — create
 itemsRouter.post('/', async (req, res, next) => {
   try {
-    const { item_code, item_name, uom, item_type } = req.body;
+    const { item_code, item_name, uom, item_type, item_usage } = req.body;
     const { rows } = await pool.query(`
-      INSERT INTO items (item_code, item_name, uom, item_type)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO items (item_code, item_name, uom, item_type, item_usage)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
-    `, [item_code, item_name, uom ?? 'EA', item_type ?? 'PRODUCT']);
+    `, [item_code, item_name, uom ?? 'EA', item_type ?? 'PRODUCT', item_usage ?? 'BOTH']);
     res.status(201).json({ success: true, data: rows[0] });
   } catch (e) { next(e); }
 });
@@ -31,17 +31,18 @@ itemsRouter.post('/', async (req, res, next) => {
 // PATCH /items/:id — update
 itemsRouter.patch('/:id', async (req, res, next) => {
   try {
-    const { item_code, item_name, uom, item_type, is_active } = req.body;
+    const { item_code, item_name, uom, item_type, item_usage, is_active } = req.body;
     const { rows } = await pool.query(`
       UPDATE items SET
-        item_code = COALESCE($1, item_code),
-        item_name = COALESCE($2, item_name),
-        uom       = COALESCE($3, uom),
-        item_type = COALESCE($4, item_type),
-        is_active = COALESCE($5, is_active)
-      WHERE item_id = $6
+        item_code  = COALESCE($1, item_code),
+        item_name  = COALESCE($2, item_name),
+        uom        = COALESCE($3, uom),
+        item_type  = COALESCE($4, item_type),
+        item_usage = COALESCE($5, item_usage),
+        is_active  = COALESCE($6, is_active)
+      WHERE item_id = $7
       RETURNING *
-    `, [item_code, item_name, uom, item_type, is_active, req.params.id]);
+    `, [item_code, item_name, uom, item_type, item_usage, is_active, req.params.id]);
     if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
     res.json({ success: true, data: rows[0] });
   } catch (e) { next(e); }

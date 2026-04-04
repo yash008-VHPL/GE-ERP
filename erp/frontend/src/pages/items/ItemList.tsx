@@ -9,21 +9,25 @@ import { purchaseApi } from '../../config/apiClient';
 const { Title } = Typography;
 const UOMS = ['EA', 'KG', 'G', 'LT', 'ML', 'MT', 'CBM', 'BOX', 'CTN', 'PAL', 'SET', 'PC', 'M', 'M2', 'M3'];
 
+const USAGE_COLOURS: Record<string, string> = { PURCHASE: 'orange', SALE: 'green', BOTH: 'blue' };
+const USAGE_LABELS:  Record<string, string> = { PURCHASE: 'Purchase only', SALE: 'Sale only', BOTH: 'Purchase & Sale' };
+
 interface Item {
-  item_id:   number;
-  item_code: string;
-  item_name: string;
-  uom:       string;
-  item_type: string;
-  is_active: boolean;
+  item_id:    number;
+  item_code:  string;
+  item_name:  string;
+  uom:        string;
+  item_type:  string;
+  item_usage: string;
+  is_active:  boolean;
 }
 
 export function ItemList() {
-  const [items, setItems]       = useState<Item[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [items, setItems]         = useState<Item[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing]   = useState<Item | null>(null);
-  const [saving, setSaving]     = useState(false);
+  const [editing, setEditing]     = useState<Item | null>(null);
+  const [saving, setSaving]       = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [form] = Form.useForm<any>();
 
@@ -40,7 +44,7 @@ export function ItemList() {
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ uom: 'EA', item_type: 'PRODUCT', is_active: true });
+    form.setFieldsValue({ uom: 'EA', item_type: 'PRODUCT', item_usage: 'BOTH', is_active: true });
     setModalOpen(true);
   };
 
@@ -84,12 +88,16 @@ export function ItemList() {
   };
 
   const columns = [
-    { title: 'Code',  dataIndex: 'item_code', width: 130, render: (v: string) => <strong>{v}</strong> },
+    { title: 'Code',  dataIndex: 'item_code', width: 120, render: (v: string) => <strong>{v}</strong> },
     { title: 'Name',  dataIndex: 'item_name', ellipsis: true },
-    { title: 'UOM',   dataIndex: 'uom',       width: 80 },
+    { title: 'UOM',   dataIndex: 'uom',       width: 70 },
     {
       title: 'Type', dataIndex: 'item_type', width: 100,
       render: (v: string) => <Tag color={v === 'PRODUCT' ? 'blue' : 'purple'}>{v}</Tag>,
+    },
+    {
+      title: 'Used For', dataIndex: 'item_usage', width: 150,
+      render: (v: string) => <Tag color={USAGE_COLOURS[v] ?? 'default'}>{USAGE_LABELS[v] ?? v}</Tag>,
     },
     {
       title: 'Active', dataIndex: 'is_active', width: 70,
@@ -138,7 +146,7 @@ export function ItemList() {
         onCancel={() => setModalOpen(false)}
         confirmLoading={saving}
         okText={editing ? 'Save Changes' : 'Create Item'}
-        width={480}
+        width={520}
         destroyOnClose
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
@@ -150,15 +158,19 @@ export function ItemList() {
               <Input />
             </Form.Item>
             <Form.Item name="uom" label="Unit of Measure" rules={[{ required: true }]}>
-              <Select
-                showSearch
-                options={UOMS.map(u => ({ value: u, label: u }))}
-              />
+              <Select showSearch options={UOMS.map(u => ({ value: u, label: u }))} />
             </Form.Item>
             <Form.Item name="item_type" label="Type" rules={[{ required: true }]}>
               <Select options={[
                 { value: 'PRODUCT', label: 'Product (physical)' },
                 { value: 'SERVICE', label: 'Service / Expense' },
+              ]} />
+            </Form.Item>
+            <Form.Item name="item_usage" label="Used For" rules={[{ required: true }]} style={{ gridColumn: 'span 2' }}>
+              <Select options={[
+                { value: 'BOTH',     label: 'Purchase & Sale' },
+                { value: 'PURCHASE', label: 'Purchase only' },
+                { value: 'SALE',     label: 'Sale only' },
               ]} />
             </Form.Item>
             <Form.Item name="is_active" label="Active" valuePropName="checked">

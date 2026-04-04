@@ -15,16 +15,24 @@ const { Text } = Typography;
 
 const NAV_ITEMS: MenuProps['items'] = [
   {
+    key: 'master',
+    label: 'Master Data',
+    type: 'group',
+    children: [
+      { key: '/items',            icon: <AppstoreOutlined />,  label: 'Items' },
+      { key: '/purchase/vendors', icon: <ShopOutlined />,      label: 'Vendors' },
+      { key: '/sales/clients',    icon: <TeamOutlined />,      label: 'Clients' },
+    ],
+  },
+  {
     key: 'purchases',
     label: 'Purchases',
     type: 'group',
     children: [
-      { key: '/purchase/vendors',  icon: <ShopOutlined />,      label: 'Vendors' },
-      { key: '/purchase/items',    icon: <AppstoreOutlined />,  label: 'Items' },
-      { key: '/purchase/orders',   icon: <FileTextOutlined />,  label: 'Purchase Orders' },
-      { key: '/purchase/receipts', icon: <InboxOutlined />,    label: 'Item Receipts' },
-      { key: '/purchase/bills',    icon: <BankOutlined />,     label: 'Vendor Bills' },
-      { key: '/purchase/payments', icon: <DollarOutlined />,   label: 'Payments' },
+      { key: '/purchase/orders',   icon: <FileTextOutlined />, label: 'Purchase Orders' },
+      { key: '/purchase/receipts', icon: <InboxOutlined />,   label: 'Item Receipts' },
+      { key: '/purchase/bills',    icon: <BankOutlined />,    label: 'Vendor Bills' },
+      { key: '/purchase/payments', icon: <DollarOutlined />,  label: 'Payments' },
     ],
   },
   {
@@ -32,7 +40,6 @@ const NAV_ITEMS: MenuProps['items'] = [
     label: 'Sales',
     type: 'group',
     children: [
-      { key: '/sales/clients',      icon: <TeamOutlined />,         label: 'Clients' },
       { key: '/sales/orders',       icon: <ShoppingCartOutlined />, label: 'Sales Orders' },
       { key: '/sales/fulfillments', icon: <SendOutlined />,         label: 'Fulfillments' },
       { key: '/sales/invoices',     icon: <FileDoneOutlined />,     label: 'Client Invoices' },
