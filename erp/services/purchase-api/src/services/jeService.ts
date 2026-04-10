@@ -104,7 +104,7 @@ export async function buildVendorBillJE(
 
   // Fetch bill header
   const { rows: [bill] } = await client.query(
-    `SELECT b.doc_id, b.total_amount, b.bill_type, b.currency, b.linked_so_id,
+    `SELECT b.doc_id, b.total_amount, b.bill_type, b.currency, b.linked_sao_id,
             v.vendor_name
        FROM vendor_bills b
        JOIN vendors v ON b.vendor_id = v.vendor_id
@@ -134,13 +134,13 @@ export async function buildVendorBillJE(
     if (bill.bill_type === 'INDIRECT_SERVICE') {
       // Use the line-level gl_account_code (set at entry time by user)
       debitAccount = l.gl_account_code ?? '6000';
-    } else if (bill.bill_type === 'DIRECT_SERVICE' && bill.linked_so_id) {
+    } else if (bill.bill_type === 'DIRECT_SERVICE' && bill.linked_sao_id) {
       // Get the inventory account from the SO's item
       const { rows: [soItem] } = await client.query(
         `SELECT i.gl_account_code
            FROM sales_order_lines sol
            JOIN items i ON sol.item_id = i.item_id
-          WHERE sol.so_id = $1 LIMIT 1`, [bill.linked_so_id]
+          WHERE sol.sao_id = $1 LIMIT 1`, [bill.linked_sao_id]
       );
       debitAccount = soItem?.gl_account_code ?? ACC.INVENTORY;
     } else {
@@ -227,21 +227,21 @@ export async function buildFulfillmentCOGSJE(
               SELECT COALESCE(SUM(vll.line_amount), 0)
               FROM vendor_bill_lines vll
               JOIN vendor_bills vb ON vll.vbl_id = vb.vbl_id
-              WHERE vb.linked_so_id = so.so_id
+              WHERE vb.linked_sao_id = so.sao_id
                 AND vb.bill_type = 'DIRECT_SERVICE'
                 AND vb.status = 'POSTED'
             ) AS service_cost,
             SUM(il.quantity_received * irl.unit_price) AS purchase_cost
        FROM fulfillments f
-       JOIN sales_orders so         ON so.so_id = f.so_id
-       JOIN sales_order_lines sol   ON sol.so_id = so.so_id
+       JOIN sales_orders so         ON so.sao_id = f.sao_id
+       JOIN sales_order_lines sol   ON sol.sao_id = so.sao_id
        JOIN items i                 ON i.item_id = sol.item_id
-       JOIN shipment_lots sl        ON sl.so_id = so.so_id AND sl.fulfillment_id = f.fulfillment_id
+       JOIN shipment_lots sl        ON sl.sao_id = so.sao_id AND sl.fulfillment_id = f.fulfillment_id
        JOIN lot_allocations la      ON la.shipment_lot_id = sl.shipment_lot_id
        JOIN inventory_lots il       ON il.lot_id = la.inventory_lot_id
        JOIN item_receipt_lines irl  ON irl.irl_id = il.irl_id
       WHERE f.fulfillment_id = $1
-      GROUP BY sol.description, i.gl_account_code, so.so_id`,
+      GROUP BY sol.description, i.gl_account_code, so.sao_id`,
     [fulfillmentId]
   );
 

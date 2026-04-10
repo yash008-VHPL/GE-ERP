@@ -24,7 +24,7 @@ vendorBillsRouter.get('/', requireAuth, async (req: Request, res: Response, next
              po.doc_id AS puo_doc_id
         FROM vendor_bills b
         JOIN vendors v             ON b.vendor_id  = v.vendor_id
-        LEFT JOIN sales_orders so  ON b.linked_so_id = so.so_id
+        LEFT JOIN sales_orders so  ON b.linked_sao_id = so.sao_id
         LEFT JOIN purchase_orders po ON b.puo_id   = po.puo_id
        WHERE 1=1`;
     const params: unknown[] = [];
@@ -48,7 +48,7 @@ vendorBillsRouter.get('/:docId', requireAuth, async (req: Request, res: Response
              po.doc_id AS puo_doc_id
         FROM vendor_bills b
         JOIN vendors v             ON b.vendor_id    = v.vendor_id
-        LEFT JOIN sales_orders so  ON b.linked_so_id = so.so_id
+        LEFT JOIN sales_orders so  ON b.linked_sao_id = so.sao_id
         LEFT JOIN purchase_orders po ON b.puo_id     = po.puo_id
        WHERE b.doc_id = $1`, [req.params.docId]
     );
@@ -106,7 +106,7 @@ vendorBillsRouter.post('/', requireAuth, async (req: Request, res: Response, nex
 
     const { rows: [bill] } = await client.query(`
       INSERT INTO vendor_bills
-        (doc_id, doc_number, doc_year, puo_id, linked_so_id, vendor_id,
+        (doc_id, doc_number, doc_year, puo_id, linked_sao_id, vendor_id,
          vendor_inv_ref, bill_date, due_date, workflow, bill_type, currency, notes)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING *`,

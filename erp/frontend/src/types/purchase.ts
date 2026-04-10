@@ -99,7 +99,7 @@ export interface VendorBill {
   doc_year:       number;
   puo_id:         number | null;
   puo_doc_id:     string | null;
-  linked_so_id:   number | null;
+  linked_sao_id:  number | null;
   so_doc_id:      string | null;
   vendor_id:      number;
   vendor_name:    string;

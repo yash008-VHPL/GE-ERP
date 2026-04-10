@@ -60,7 +60,7 @@ inventoryLotsRouter.get('/:lotNumber', async (req: Request, res: Response, next:
              so.doc_id AS so_doc_id
         FROM lot_allocations la
         JOIN shipment_lots sl ON sl.shipment_lot_id = la.shipment_lot_id
-        JOIN sales_orders so  ON so.so_id = sl.so_id
+        JOIN sales_orders so  ON so.sao_id = sl.sao_id
        WHERE la.inventory_lot_id = $1
        ORDER BY la.allocated_at`, [lot.lot_id]
     );
@@ -92,7 +92,7 @@ inventoryLotsRouter.patch('/:lotNumber', async (req: Request, res: Response, nex
 // GET /inventory-lots/shipments/list — list shipment lots
 inventoryLotsRouter.get('/shipments/list', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { so_id, status } = req.query;
+    const { sao_id, status } = req.query;
     let query = `
       SELECT sl.*,
              i.item_code, i.item_name,
@@ -100,11 +100,11 @@ inventoryLotsRouter.get('/shipments/list', async (req: Request, res: Response, n
              c.client_name
         FROM shipment_lots sl
         JOIN items i        ON i.item_id = sl.item_id
-        JOIN sales_orders so ON so.so_id = sl.so_id
+        JOIN sales_orders so ON so.sao_id = sl.sao_id
         JOIN clients c      ON c.client_id = so.client_id
        WHERE 1=1`;
     const params: unknown[] = [];
-    if (so_id)  { params.push(so_id);  query += ` AND sl.so_id = $${params.length}`; }
+    if (sao_id) { params.push(sao_id); query += ` AND sl.sao_id = $${params.length}`; }
     if (status) { params.push(status); query += ` AND sl.status = $${params.length}`; }
     query += ' ORDER BY sl.created_at DESC';
 
@@ -142,7 +142,7 @@ inventoryLotsRouter.post('/shipments', async (req: Request, res: Response, next:
 
     // Create shipment lot
     const { rows: [sl] } = await client.query(`
-      INSERT INTO shipment_lots (lot_number, so_id, item_id, quantity, uom, notes)
+      INSERT INTO shipment_lots (lot_number, sao_id, item_id, quantity, uom, notes)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
       [lotNumber, soId, itemId, quantity, uom ?? 'MT', notes ?? null]
     );
