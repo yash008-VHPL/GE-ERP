@@ -12,6 +12,8 @@ import { paymentsRouter }       from './routes/payments';
 import { clientsRouter }        from './routes/clients';
 import { salesOrdersRouter }    from './routes/salesOrders';
 import { fulfillmentsRouter }   from './routes/fulfillments';
+import { financialsRouter }     from './routes/financials';
+import { inventoryLotsRouter }  from './routes/inventoryLots';
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.use('/payments',        paymentsRouter);
 app.use('/clients',         clientsRouter);
 app.use('/sales-orders',    salesOrdersRouter);
 app.use('/fulfillments',    fulfillmentsRouter);
+app.use('/financials',      financialsRouter);
+app.use('/inventory-lots',  inventoryLotsRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[error]', err.message);

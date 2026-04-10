@@ -6,6 +6,8 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { purchaseApi } from '../../config/apiClient';
 
+interface Account { account_code: string; account_name: string; account_type: string; }
+
 const { Title } = Typography;
 const UOMS = ['EA', 'KG', 'G', 'LT', 'ML', 'MT', 'CBM', 'BOX', 'CTN', 'PAL', 'SET', 'PC', 'M', 'M2', 'M3'];
 
@@ -13,17 +15,19 @@ const USAGE_COLOURS: Record<string, string> = { PURCHASE: 'orange', SALE: 'green
 const USAGE_LABELS:  Record<string, string> = { PURCHASE: 'Purchase only', SALE: 'Sale only', BOTH: 'Purchase & Sale' };
 
 interface Item {
-  item_id:    number;
-  item_code:  string;
-  item_name:  string;
-  uom:        string;
-  item_type:  string;
-  item_usage: string;
-  is_active:  boolean;
+  item_id:         number;
+  item_code:       string;
+  item_name:       string;
+  uom:             string;
+  item_type:       string;
+  item_usage:      string;
+  gl_account_code: string | null;
+  is_active:       boolean;
 }
 
 export function ItemList() {
   const [items, setItems]         = useState<Item[]>([]);
+  const [accounts, setAccounts]   = useState<Account[]>([]);
   const [loading, setLoading]     = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]     = useState<Item | null>(null);
@@ -33,8 +37,13 @@ export function ItemList() {
 
   const load = () => {
     setLoading(true);
-    purchaseApi.get('/items')
-      .then(r => setItems(r.data.data))
+    Promise.all([
+      purchaseApi.get('/items'),
+      purchaseApi.get('/financials/accounts'),
+    ]).then(([ir, ar]) => {
+      setItems(ir.data.data);
+      setAccounts(ar.data.data);
+    })
       .catch(() => message.error('Failed to load items'))
       .finally(() => setLoading(false));
   };
@@ -87,6 +96,8 @@ export function ItemList() {
     }
   };
 
+  const inventoryAccounts = accounts.filter(a => a.account_type === 'ASSET');
+
   const columns = [
     { title: 'Code',  dataIndex: 'item_code', width: 120, render: (v: string) => <strong>{v}</strong> },
     { title: 'Name',  dataIndex: 'item_name', ellipsis: true },
@@ -98,6 +109,10 @@ export function ItemList() {
     {
       title: 'Used For', dataIndex: 'item_usage', width: 150,
       render: (v: string) => <Tag color={USAGE_COLOURS[v] ?? 'default'}>{USAGE_LABELS[v] ?? v}</Tag>,
+    },
+    {
+      title: 'GL Account', dataIndex: 'gl_account_code', width: 130,
+      render: (v: string | null) => v ? <Tag color="cyan">{v}</Tag> : <Tag color="default">—</Tag>,
     },
     {
       title: 'Active', dataIndex: 'is_active', width: 70,
@@ -172,6 +187,19 @@ export function ItemList() {
                 { value: 'PURCHASE', label: 'Purchase only' },
                 { value: 'SALE',     label: 'Sale only' },
               ]} />
+            </Form.Item>
+            <Form.Item name="gl_account_code" label="GL / Inventory Account" style={{ gridColumn: 'span 2' }}
+              tooltip="The balance sheet asset account used for this item's inventory value (e.g. 1300 Stock)">
+              <Select
+                showSearch allowClear
+                placeholder="Select inventory account"
+                options={inventoryAccounts.map(a => ({
+                  value: a.account_code,
+                  label: `${a.account_code} — ${a.account_name}`,
+                }))}
+                filterOption={(input, opt) =>
+                  String(opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              />
             </Form.Item>
             <Form.Item name="is_active" label="Active" valuePropName="checked">
               <Switch />

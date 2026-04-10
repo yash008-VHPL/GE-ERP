@@ -113,15 +113,89 @@ itemReceiptsRouter.delete('/:docId', async (req, res, next) => {
 });
 
 // PATCH /item-receipts/:docId/status
+// When confirming (DRAFT → CONFIRMED):
+//   - Requires vendorBatchRef in body (optional) and spFolderUrl (SharePoint folder)
+//   - Auto-generates: docket number (GE-DCK-NNNN-YYYY) and lot numbers (GE-IB-NNNN-YYYY)
+//   - Creates one inventory_lot per receipt line
+//   - Triggers DB trigger to update PO qty_received
 itemReceiptsRouter.patch('/:docId/status', async (req, res, next) => {
+  const client = await pool.connect();
   try {
-    const { status } = req.body;
-    const { rows } = await pool.query(
-      `UPDATE item_receipts SET status = $1
-       WHERE doc_id = $2 RETURNING *`,
-      [status, req.params.docId]
+    await client.query('BEGIN');
+
+    const { status, vendorBatchRef, spFolderUrl } = req.body;
+
+    const { rows: [itr] } = await client.query(
+      `SELECT ir.*, po.vendor_id
+         FROM item_receipts ir
+         JOIN purchase_orders po ON po.puo_id = ir.puo_id
+        WHERE ir.doc_id = $1`, [req.params.docId]
     );
-    if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
-    res.json({ data: rows[0] });
-  } catch (e) { next(e); }
+    if (!itr) { await client.query('ROLLBACK'); res.status(404).json({ error: 'Not found' }); return; }
+
+    // Update status (DB trigger fires here to roll up qty_received on PO lines)
+    const { rows: [updated] } = await client.query(
+      `UPDATE item_receipts SET status = $1 WHERE itr_id = $2 RETURNING *`,
+      [status, itr.itr_id]
+    );
+
+    // When confirming, create inward inventory lots (one per receipt line)
+    if (status === 'CONFIRMED' && itr.status === 'DRAFT') {
+      const year = new Date(itr.receipt_date).getFullYear();
+
+      // Allocate a single docket number for this receipt
+      const { rows: [dckSeq] } = await client.query(
+        `SELECT next_doc_number('DCK', $1) AS num`, [year]
+      );
+      const docketNumber = `GE-DCK-${String(dckSeq.num).padStart(4,'0')}-${year}`;
+
+      // Fetch lines with item info
+      const { rows: lines } = await client.query(`
+        SELECT irl.irl_id, irl.qty_received, irl.unit_price,
+               pol.item_id, i.uom
+          FROM item_receipt_lines irl
+          JOIN purchase_order_lines pol ON pol.pol_id = irl.pol_id
+          LEFT JOIN items i             ON i.item_id  = pol.item_id
+         WHERE irl.itr_id = $1
+         ORDER BY irl.line_seq`, [itr.itr_id]
+      );
+
+      for (const line of lines) {
+        if (!line.item_id) continue; // skip lines without an item
+
+        const { rows: [ibSeq] } = await client.query(
+          `SELECT next_doc_number('IB', $1) AS num`, [year]
+        );
+        const lotNumber = `GE-IB-${String(ibSeq.num).padStart(4,'0')}-${year}`;
+
+        await client.query(`
+          INSERT INTO inventory_lots
+            (lot_number, docket_number, itr_id, irl_id, item_id, vendor_id,
+             quantity_received, quantity_available, uom,
+             vendor_batch_ref, sharepoint_folder, received_date)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11)`,
+          [
+            lotNumber, docketNumber, itr.itr_id, line.irl_id,
+            line.item_id, itr.vendor_id,
+            line.qty_received,
+            line.uom ?? 'MT',
+            vendorBatchRef ?? null,
+            spFolderUrl ?? null,
+            itr.receipt_date,
+          ]
+        );
+      }
+
+      await client.query('COMMIT');
+      res.json({ data: { ...updated, docket_number: docketNumber } });
+    } else {
+      await client.query('COMMIT');
+      res.json({ data: updated });
+    }
+  } catch (e) {
+    await client.query('ROLLBACK');
+    next(e);
+  } finally {
+    client.release();
+  }
 });

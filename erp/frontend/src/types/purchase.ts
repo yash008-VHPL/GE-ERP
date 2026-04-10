@@ -63,18 +63,69 @@ export interface PurchaseOrder {
   lines?:           PurchaseOrderLine[];
 }
 
+export type VBlBillType = 'GOODS' | 'DIRECT_SERVICE' | 'INDIRECT_SERVICE';
+
+export interface VendorBillLine {
+  vbll_id:         number;
+  vbl_id:          number;
+  line_seq:        number;
+  item_id:         number | null;
+  item_code:       string | null;
+  item_name:       string | null;
+  description:     string | null;
+  quantity:        string;
+  unit_price:      string;
+  tax_rate:        string;
+  tax_amount:      string;
+  line_amount:     string;
+  gl_account_code: string | null;
+  gl_account_name: string | null;
+}
+
+export interface VendorBillPayment {
+  vbp_id:         number;
+  vbl_id:         number;
+  payment_date:   string;
+  payment_method: string | null;
+  payment_ref:    string | null;
+  amount:         string;
+  currency:       string;
+}
+
 export interface VendorBill {
   vbl_id:         number;
   doc_id:         string;
+  doc_number:     number;
+  doc_year:       number;
   puo_id:         number | null;
+  puo_doc_id:     string | null;
+  linked_so_id:   number | null;
+  so_doc_id:      string | null;
   vendor_id:      number;
   vendor_name:    string;
+  vendor_code:    string;
   vendor_inv_ref: string | null;
   bill_date:      string;
   due_date:       string | null;
   workflow:       'CREDIT' | 'PREPAY' | 'EXPENSE';
+  bill_type:      VBlBillType;
   status:         string;
+  subtotal:       string;
+  tax_amount:     string;
   total_amount:   string;
   amount_paid:    string;
   currency:       string;
+  notes:          string | null;
+  lines?:         VendorBillLine[];
+  payments?:      VendorBillPayment[];
+}
+
+export interface Account {
+  account_id:     number;
+  account_code:   string;
+  account_name:   string;
+  account_type:   string;
+  normal_balance: 'DR' | 'CR';
+  parent_code:    string | null;
+  is_active:      boolean;
 }

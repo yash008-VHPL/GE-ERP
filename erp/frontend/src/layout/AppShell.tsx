@@ -6,6 +6,8 @@ import {
   LogoutOutlined, UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined,
   ShoppingCartOutlined, SendOutlined, FileDoneOutlined,
   TeamOutlined, ShopOutlined, AppstoreOutlined,
+  StockOutlined, BarChartOutlined, BookOutlined,
+  FundOutlined, TableOutlined, LineChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
@@ -30,9 +32,9 @@ const NAV_ITEMS: MenuProps['items'] = [
     type: 'group',
     children: [
       { key: '/purchase/orders',   icon: <FileTextOutlined />, label: 'Purchase Orders' },
-      { key: '/purchase/receipts', icon: <InboxOutlined />,   label: 'Item Receipts' },
-      { key: '/purchase/bills',    icon: <BankOutlined />,    label: 'Vendor Bills' },
-      { key: '/purchase/payments', icon: <DollarOutlined />,  label: 'Payments' },
+      { key: '/purchase/receipts', icon: <InboxOutlined />,    label: 'Item Receipts' },
+      { key: '/purchase/bills',    icon: <BankOutlined />,     label: 'Vendor Bills' },
+      { key: '/purchase/payments', icon: <DollarOutlined />,   label: 'Payments' },
     ],
   },
   {
@@ -44,6 +46,27 @@ const NAV_ITEMS: MenuProps['items'] = [
       { key: '/sales/fulfillments', icon: <SendOutlined />,         label: 'Fulfillments' },
       { key: '/sales/invoices',     icon: <FileDoneOutlined />,     label: 'Client Invoices' },
       { key: '/sales/payments',     icon: <DollarOutlined />,       label: 'Client Payments' },
+    ],
+  },
+  {
+    key: 'inventory',
+    label: 'Inventory',
+    type: 'group',
+    children: [
+      { key: '/inventory/lots', icon: <StockOutlined />, label: 'Inward Lots (IB)' },
+    ],
+  },
+  {
+    key: 'financials',
+    label: 'Financials',
+    type: 'group',
+    children: [
+      { key: '/financials/accounts',        icon: <BookOutlined />,       label: 'Chart of Accounts' },
+      { key: '/financials/journal-entries', icon: <TableOutlined />,      label: 'Journal Entries' },
+      { key: '/financials/general-ledger',  icon: <BarChartOutlined />,   label: 'General Ledger' },
+      { key: '/financials/trial-balance',   icon: <FundOutlined />,       label: 'Trial Balance' },
+      { key: '/financials/balance-sheet',   icon: <LineChartOutlined />,  label: 'Balance Sheet' },
+      { key: '/financials/profit-loss',     icon: <LineChartOutlined />,  label: 'Profit & Loss' },
     ],
   },
 ];
@@ -80,6 +103,7 @@ export function AppShell() {
           selectedKeys={[location.pathname]}
           items={NAV_ITEMS}
           onClick={({ key }) => navigate(key)}
+          style={{ overflowY: 'auto', height: 'calc(100vh - 64px)' }}
         />
       </Sider>
 
