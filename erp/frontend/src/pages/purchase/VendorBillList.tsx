@@ -8,7 +8,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
-import { VendorBill, VBlBillType } from '../../types/purchase';
+import type { VendorBill, VBlBillType } from '../../types/purchase';
 
 const { Title } = Typography;
 

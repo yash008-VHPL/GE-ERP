@@ -12,7 +12,7 @@ import {
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
 import { StatusTag } from '../../components/purchase/StatusTag';
-import type { VendorBill, VendorBillPayment } from '../../types/purchase';
+import type { VendorBill } from '../../types/purchase';
 
 const { Title, Text } = Typography;
 
