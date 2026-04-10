@@ -9,6 +9,16 @@ export const msalConfig: Configuration = {
   cache: {
     cacheLocation: 'localStorage',
   },
+  system: {
+    // When the silent-refresh iframe gets an auth code back and loads
+    // the app at redirectUri, MSAL must NOT try to navigate the top-level
+    // window — the iframe sandbox blocks that ("allow-top-navigation" not
+    // set) and the whole silent flow fails.  Setting this to false tells
+    // MSAL to stay put inside the iframe, process the code, and
+    // communicate the token back to the parent via BroadcastChannel /
+    // localStorage instead of via a parent-window redirect.
+    navigateToLoginRequestUrl: false,
+  },
 };
 
 /** Scopes to request when acquiring a token for the Purchase API + SP service */
