@@ -37,15 +37,13 @@ export function ItemList() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([
-      purchaseApi.get('/items'),
-      purchaseApi.get('/financials/accounts'),
-    ]).then(([ir, ar]) => {
-      setItems(ir.data.data);
-      setAccounts(ar.data.data);
-    })
+    purchaseApi.get('/items')
+      .then(r => setItems(r.data.data))
       .catch(() => message.error('Failed to load items'))
       .finally(() => setLoading(false));
+    purchaseApi.get('/financials/accounts')
+      .then(r => setAccounts(r.data.data))
+      .catch(() => {}); // GL accounts optional — don't block items loading
   };
 
   useEffect(() => { load(); }, []);
