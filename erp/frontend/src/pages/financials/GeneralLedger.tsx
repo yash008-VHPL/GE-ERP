@@ -125,7 +125,7 @@ export function GeneralLedger() {
               exportToExcel(
                 [
                   // Opening balance row
-                  { date: '', doc_id: '', je_description: 'Opening Balance', line_description: '', debit: '', credit: '', running_balance: data.opening_balance },
+                  { date: '', doc_id: '', je_description: 'Opening Balance', line_description: '', source_type: '', debit: '', credit: '', running_balance: data.opening_balance },
                   ...data.lines.map(l => ({
                     date: dayjs(l.entry_date).format('DD MMM YYYY'),
                     doc_id: l.doc_id,
@@ -137,7 +137,7 @@ export function GeneralLedger() {
                     running_balance: l.running_balance,
                   })),
                   // Closing balance row
-                  { date: '', doc_id: '', je_description: 'Closing Balance', line_description: '', debit: '', credit: '', running_balance: data.closing_balance },
+                  { date: '', doc_id: '', je_description: 'Closing Balance', line_description: '', source_type: '', debit: '', credit: '', running_balance: data.closing_balance },
                 ],
                 [
                   { key: 'date',            label: 'Date',         width: 14 },
