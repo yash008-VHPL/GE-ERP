@@ -98,7 +98,7 @@ export function TrialBalance() {
               if (!data) return;
               exportToExcel(
                 [
-                  ...data.rows,
+                  ...data.rows as any[],
                   { account_code: 'TOTAL', account_name: '', account_type: '', total_debit: data.total_debit, total_credit: data.total_credit, balance: '' },
                 ],
                 [
