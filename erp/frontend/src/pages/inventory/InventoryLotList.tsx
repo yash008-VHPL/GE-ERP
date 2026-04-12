@@ -52,48 +52,69 @@ export function InventoryLotList() {
 
   const columns: ColumnsType<InventoryLot> = [
     {
-      title: 'Lot No.',
-      dataIndex: 'lot_number',
-      render: (v: string) => (
-        <Button type="link" style={{ padding: 0 }}
-          onClick={() => navigate(`/inventory/lots/${v}`)}>
-          {v}
-        </Button>
+      title: 'Lot / Docket',
+      width: 200,
+      render: (_: unknown, row: InventoryLot) => (
+        <Space direction="vertical" size={0}>
+          <Button type="link" style={{ padding: 0, height: 'auto', fontWeight: 600 }}
+            onClick={() => navigate(`/inventory/lots/${row.lot_number}`)}>
+            {row.lot_number}
+          </Button>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{row.docket_number}</Typography.Text>
+        </Space>
       ),
     },
-    { title: 'Docket',      dataIndex: 'docket_number', width: 160 },
-    { title: 'Item',        dataIndex: 'item_code',     width: 100 },
-    { title: 'Item Name',   dataIndex: 'item_name',     ellipsis: true },
-    { title: 'Vendor',      dataIndex: 'vendor_name',   ellipsis: true },
-    { title: 'Vendor Batch', dataIndex: 'vendor_batch_ref', width: 130,
-      render: (v: string | null) => v ?? '—' },
+    {
+      title: 'Item',
+      ellipsis: true,
+      render: (_: unknown, row: InventoryLot) => (
+        <Space direction="vertical" size={0}>
+          <Typography.Text strong style={{ fontSize: 13 }}>{row.item_name}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{row.item_code}</Typography.Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Vendor / Batch',
+      ellipsis: true,
+      render: (_: unknown, row: InventoryLot) => (
+        <Space direction="vertical" size={0}>
+          <Typography.Text style={{ fontSize: 13 }}>{row.vendor_name}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{row.vendor_batch_ref ?? '—'}</Typography.Text>
+        </Space>
+      ),
+    },
     {
       title: 'Received', dataIndex: 'received_date', width: 110,
       render: (v: string) => dayjs(v).format('DD MMM YYYY'),
     },
     {
-      title: 'Qty Received',
-      dataIndex: 'quantity_received',
-      width: 110,
-      align: 'right' as const,
-      render: (v: string, row) => `${Number(v).toFixed(4)} ${row.uom}`,
+      title: 'Qty Received', dataIndex: 'quantity_received', width: 120, align: 'right' as const,
+      render: (v: string, row) => (
+        <Space direction="vertical" size={0} style={{ textAlign: 'right' }}>
+          <Typography.Text strong>{Number(v).toLocaleString()}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{row.uom}</Typography.Text>
+        </Space>
+      ),
     },
     {
-      title: 'Qty Available',
-      dataIndex: 'quantity_available',
-      width: 120,
-      align: 'right' as const,
-      render: (v: string, row) => `${Number(v).toFixed(4)} ${row.uom}`,
+      title: 'Qty Available', dataIndex: 'quantity_available', width: 120, align: 'right' as const,
+      render: (v: string, row) => (
+        <Space direction="vertical" size={0} style={{ textAlign: 'right' }}>
+          <Typography.Text strong>{Number(v).toLocaleString()}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{row.uom}</Typography.Text>
+        </Space>
+      ),
     },
     {
-      title: 'Status', dataIndex: 'status', width: 130,
+      title: 'Status', dataIndex: 'status', width: 120,
       render: (v: string) => <Tag color={STATUS_COLOR[v] ?? 'default'}>{v.replace('_', ' ')}</Tag>,
     },
     {
-      title: 'Receipt', dataIndex: 'receipt_doc_id', width: 150,
+      title: 'Receipt', dataIndex: 'receipt_doc_id', width: 140,
       render: (v: string) => (
         <Button type="link" style={{ padding: 0 }}
-          onClick={() => navigate(`/purchase/receipts/${v}`)}>
+          onClick={e => { e.stopPropagation(); navigate(`/purchase/receipts/${v}`); }}>
           {v}
         </Button>
       ),
@@ -130,6 +151,8 @@ export function InventoryLotList() {
           columns={columns}
           size="small"
           pagination={{ pageSize: 20, showSizeChanger: true }}
+          onRow={row => ({ onClick: () => navigate(`/inventory/lots/${row.lot_number}`), style: { cursor: 'pointer' } })}
+          scroll={{ x: 900 }}
         />
       )}
     </>
