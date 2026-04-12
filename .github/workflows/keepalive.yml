@@ -1,0 +1,22 @@
+name: API Keepalive
+
+on:
+  schedule:
+    # Ping every 15 minutes to prevent App Service cold starts.
+    # GitHub Actions cron is UTC — adjust if needed.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:   # allow manual trigger for testing
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping purchase API health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://ge-erp-api.azurewebsites.net/health \
+            --max-time 30)
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Warning: health check returned $STATUS" >&2
+          fi
