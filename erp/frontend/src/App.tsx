@@ -6,6 +6,9 @@ import { geTheme } from './config/theme';
 import { AuthGuard } from './auth/AuthGuard';
 import { AppShell } from './layout/AppShell';
 
+// Dashboard
+import { Dashboard }            from './pages/Dashboard';
+
 // Master data
 import { VendorList }           from './pages/purchase/VendorList';
 import { ItemList }             from './pages/items/ItemList';
@@ -51,7 +54,8 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<AppShell />}>
-                <Route index element={<Navigate to="/purchase/orders" replace />} />
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
 
                 {/* Master data */}
                 <Route path="items"                  element={<ItemList />} />
