@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MsalProvider } from '@azure/msal-react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Typography } from 'antd';
 import { msalInstance } from './config/msalInstance';
 import { geTheme } from './config/theme';
 import { AuthGuard } from './auth/AuthGuard';
@@ -79,6 +79,9 @@ export default function App() {
                 <Route path="sales/orders"               element={<SOList />} />
                 <Route path="sales/orders/new"           element={<SOCreate />} />
                 <Route path="sales/fulfillments"         element={<FulfillmentList />} />
+                <Route path="sales/fulfillments/:docId"  element={<Typography.Text>Fulfillment detail coming soon</Typography.Text>} />
+                <Route path="sales/invoices/new"         element={<Typography.Text>Invoice create coming soon</Typography.Text>} />
+                <Route path="sales/invoices/:docId"      element={<Typography.Text>Invoice detail coming soon</Typography.Text>} />
                 <Route path="sales/invoices"             element={<InvoiceList />} />
                 <Route path="sales/payments"             element={<ClientPaymentList />} />
 

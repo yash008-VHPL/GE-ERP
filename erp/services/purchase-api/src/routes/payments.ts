@@ -5,6 +5,23 @@ import { formatDocId } from '../services/poService';
 
 export const paymentsRouter = Router();
 
+// GET /payments/client-invoices — list of client_invoice_payments joined to invoice and client
+paymentsRouter.get('/client-invoices', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT cip.*,
+             c.client_name, c.client_code,
+             inv.doc_id AS inv_doc_id,
+             inv.total_amount AS inv_total_amount
+      FROM client_invoice_payments cip
+      JOIN clients c       ON c.client_id = cip.client_id
+      JOIN client_invoices inv ON inv.inv_id = cip.inv_id
+      ORDER BY cip.payment_date DESC, cip.created_at DESC
+    `);
+    res.json({ data: rows });
+  } catch (e) { next(e); }
+});
+
 // POST /payments/vendor-bill-payment — VBP (direct payment, Workflows 1 & 3)
 paymentsRouter.post('/vendor-bill-payment', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {

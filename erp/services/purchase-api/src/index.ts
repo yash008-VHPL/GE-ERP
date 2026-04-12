@@ -12,6 +12,7 @@ import { paymentsRouter }       from './routes/payments';
 import { clientsRouter }        from './routes/clients';
 import { salesOrdersRouter }    from './routes/salesOrders';
 import { fulfillmentsRouter }   from './routes/fulfillments';
+import { invoicesRouter }       from './routes/invoices';
 import { financialsRouter }     from './routes/financials';
 import { inventoryLotsRouter }  from './routes/inventoryLots';
 
@@ -32,6 +33,7 @@ app.use('/payments',        paymentsRouter);
 app.use('/clients',         clientsRouter);
 app.use('/sales-orders',    salesOrdersRouter);
 app.use('/fulfillments',    fulfillmentsRouter);
+app.use('/invoices',        invoicesRouter);
 app.use('/financials',      financialsRouter);
 app.use('/inventory-lots',  inventoryLotsRouter);
 
