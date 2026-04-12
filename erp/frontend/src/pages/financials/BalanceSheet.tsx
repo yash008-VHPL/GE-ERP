@@ -79,7 +79,7 @@ export function BalanceSheet() {
                   name: 'Assets',
                   headers: acctHeaders,
                   rows: [
-                    ...data.sections.ASSET.accounts as Record<string, unknown>[],
+                    ...data.sections.ASSET.accounts as unknown[],
                     { account_code: '', account_name: 'TOTAL ASSETS', balance: data.sections.ASSET.total },
                   ],
                 },
@@ -87,7 +87,7 @@ export function BalanceSheet() {
                   name: 'Liabilities',
                   headers: acctHeaders,
                   rows: [
-                    ...data.sections.LIABILITY.accounts as Record<string, unknown>[],
+                    ...data.sections.LIABILITY.accounts as unknown[],
                     { account_code: '', account_name: 'TOTAL LIABILITIES', balance: data.sections.LIABILITY.total },
                   ],
                 },
@@ -95,7 +95,7 @@ export function BalanceSheet() {
                   name: 'Equity',
                   headers: acctHeaders,
                   rows: [
-                    ...data.sections.EQUITY.accounts as Record<string, unknown>[],
+                    ...data.sections.EQUITY.accounts as unknown[],
                     { account_code: '', account_name: 'TOTAL EQUITY', balance: data.sections.EQUITY.total },
                   ],
                 },

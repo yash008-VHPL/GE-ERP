@@ -84,7 +84,7 @@ export function ProfitLoss() {
                   name: 'Revenue',
                   headers: acctHeaders,
                   rows: [
-                    ...data.revenue as Record<string, unknown>[],
+                    ...data.revenue as unknown[],
                     { account_code: '', account_name: 'TOTAL REVENUE', balance: data.total_revenue },
                   ],
                 },
@@ -92,7 +92,7 @@ export function ProfitLoss() {
                   name: 'Expenses',
                   headers: acctHeaders,
                   rows: [
-                    ...data.expenses as Record<string, unknown>[],
+                    ...data.expenses as unknown[],
                     { account_code: '', account_name: 'TOTAL EXPENSES', balance: data.total_expenses },
                   ],
                 },
