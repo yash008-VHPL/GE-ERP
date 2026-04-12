@@ -14,7 +14,7 @@ jobs:
       - name: Ping purchase API health endpoint
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://ge-erp-api.azurewebsites.net/health \
+            https://ge-erp-api-eehufufrb0a5exa3.westeurope-01.azurewebsites.net/health \
             --max-time 30)
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then

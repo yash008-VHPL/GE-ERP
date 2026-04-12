@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { InteractionRequiredAuthError } from '@azure/msal-browser';
+import axios, { AxiosError } from 'axios';
 import { msalInstance } from './msalInstance';
 
 const API_SCOPES = [`api://${import.meta.env.VITE_AZURE_CLIENT_ID}/access_as_user`];
@@ -19,32 +18,41 @@ async function getToken(): Promise<string> {
     });
     return result.accessToken;
   } catch (err) {
-    if (err instanceof InteractionRequiredAuthError) {
-      // Silent refresh blocked (token expired / tracking prevention blocking iframe).
-      // Redirect to interactive login so the user gets a fresh token.
-      await msalInstance.acquireTokenRedirect({ scopes: API_SCOPES, account: accounts[0] });
-      throw new Error('Redirecting to login…');
-    }
-    throw err;
+    // ANY silent failure (InteractionRequiredAuthError, BrowserAuthError
+    // from sandbox blocking the iframe, interaction_in_progress, timeout, etc.)
+    // — redirect to interactive login so the user always gets a fresh token.
+    console.error('[auth] acquireTokenSilent failed, redirecting to login:', err);
+    await msalInstance.acquireTokenRedirect({ scopes: API_SCOPES, account: accounts[0] });
+    throw new Error('Redirecting to login…');
   }
+}
+
+function attachInterceptors(instance: ReturnType<typeof axios.create>) {
+  instance.interceptors.request.use(async config => {
+    const token = await getToken();
+    config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  });
+
+  // Surface real HTTP errors so the UI can show a meaningful message.
+  instance.interceptors.response.use(
+    res => res,
+    (err: AxiosError) => {
+      const status  = err.response?.status;
+      const detail  = (err.response?.data as { error?: string; detail?: string } | undefined);
+      const message = detail?.error ?? detail?.detail ?? err.message;
+      console.error(`[api] ${err.config?.method?.toUpperCase()} ${err.config?.url} → ${status ?? 'network error'}: ${message}`);
+      return Promise.reject(err);
+    }
+  );
 }
 
 export const purchaseApi = axios.create({
   baseURL: import.meta.env.VITE_PURCHASE_API_URL,
 });
-
-purchaseApi.interceptors.request.use(async config => {
-  const token = await getToken();
-  config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+attachInterceptors(purchaseApi);
 
 export const spApi = axios.create({
   baseURL: import.meta.env.VITE_SP_SERVICE_URL,
 });
-
-spApi.interceptors.request.use(async config => {
-  const token = await getToken();
-  config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+attachInterceptors(spApi);

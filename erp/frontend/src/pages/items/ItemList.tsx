@@ -39,7 +39,11 @@ export function ItemList() {
     setLoading(true);
     purchaseApi.get('/items')
       .then(r => setItems(r.data.data))
-      .catch(() => message.error('Failed to load items'))
+      .catch((err) => {
+        const status = err?.response?.status;
+        const detail = err?.response?.data?.error ?? err?.response?.data?.detail;
+        message.error(`Failed to load items${status ? ` (${status}${detail ? ': ' + detail : ''})` : ''}`);
+      })
       .finally(() => setLoading(false));
     purchaseApi.get('/financials/accounts')
       .then(r => setAccounts(r.data.data))
