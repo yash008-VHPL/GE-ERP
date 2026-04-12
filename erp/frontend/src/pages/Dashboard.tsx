@@ -46,10 +46,10 @@ export function Dashboard() {
   const userName = accounts[0]?.name ?? accounts[0]?.username ?? 'there';
   const firstName = userName.split(' ')[0];
 
-  const showProcurement = hasAnyRole(roles, 'Admin', 'Procurement', 'Finance');
-  const showSales       = hasAnyRole(roles, 'Admin', 'Sales', 'Finance');
-  const showInventory   = hasAnyRole(roles, 'Admin', 'Warehouse', 'Procurement');
-  const showFinancials  = hasAnyRole(roles, 'Admin', 'Finance');
+  const showProcurement = hasAnyRole(roles, 'Admin', 'Management', 'Coordination');
+  const showSales       = hasAnyRole(roles, 'Admin', 'Management', 'Coordination');
+  const showInventory   = hasAnyRole(roles, 'Admin', 'Management', 'Coordination');
+  const showFinancials  = hasAnyRole(roles, 'Admin', 'Management');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<Record<string, any[]>>({});
@@ -254,14 +254,11 @@ export function Dashboard() {
         </Title>
         <Space style={{ marginTop: 4 }}>
           <Text type="secondary">{dayjs().format('dddd, D MMMM YYYY')}</Text>
-          {roles.filter(r => r !== 'Admin' || roles.length === 1 || (roles.length === 5)).length < 5 &&
-            roles.map(r => (
-              <Tag key={r} color={
-                r === 'Admin' ? 'gold' : r === 'Finance' ? 'purple' :
-                r === 'Procurement' ? 'blue' : r === 'Sales' ? 'green' : 'cyan'
-              }>{r}</Tag>
-            ))
-          }
+            {roles.map(r => (
+            <Tag key={r} color={
+              r === 'Admin' ? 'gold' : r === 'Management' ? 'purple' : 'blue'
+            }>{r}</Tag>
+          ))}
         </Space>
       </div>
 

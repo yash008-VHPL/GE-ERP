@@ -2,12 +2,17 @@ import { useMsal } from '@azure/msal-react';
 
 /**
  * App Roles defined in the Azure AD app registration manifest.
- * Assign these roles to users/groups in Azure Portal →
- * App registrations → your app → App roles → assign to users/groups.
+ *
+ * Admin       — full access to everything including master data
+ * Management  — full read visibility across all sections (including financials)
+ * Coordination — day-to-day operations: purchases, sales, inventory (no financials)
+ *
+ * To assign: Azure Portal → Enterprise Applications → your app →
+ *            Users and groups → Add user/group → select role
  */
-export type AppRole = 'Admin' | 'Procurement' | 'Sales' | 'Finance' | 'Warehouse';
+export type AppRole = 'Admin' | 'Management' | 'Coordination';
 
-const KNOWN_ROLES: AppRole[] = ['Admin', 'Procurement', 'Sales', 'Finance', 'Warehouse'];
+const KNOWN_ROLES: AppRole[] = ['Admin', 'Management', 'Coordination'];
 
 export function useUserRoles(): AppRole[] {
   const { accounts } = useMsal();
@@ -16,7 +21,7 @@ export function useUserRoles(): AppRole[] {
   const matched = raw.filter((r): r is AppRole => KNOWN_ROLES.includes(r as AppRole));
   // If no app roles are configured in Azure AD yet, grant full access
   // so the app stays usable during initial setup.
-  return matched.length > 0 ? matched : ['Admin', 'Procurement', 'Sales', 'Finance', 'Warehouse'];
+  return matched.length > 0 ? matched : ['Admin', 'Management', 'Coordination'];
 }
 
 export function hasAnyRole(userRoles: AppRole[], ...required: AppRole[]): boolean {

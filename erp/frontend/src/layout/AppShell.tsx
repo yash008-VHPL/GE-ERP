@@ -26,34 +26,30 @@ export function AppShell() {
   const roles = useUserRoles();
 
   // Which top-level sections this user can see
+  // Admin        — everything
+  // Management   — everything including financials (read/oversight)
+  // Coordination — purchases, sales, inventory only (no financials)
   const canSee = {
-    masterData:   hasAnyRole(roles, 'Admin', 'Procurement', 'Sales', 'Warehouse'),
-    purchases:    hasAnyRole(roles, 'Admin', 'Procurement', 'Finance'),
-    sales:        hasAnyRole(roles, 'Admin', 'Sales', 'Finance'),
-    inventory:    hasAnyRole(roles, 'Admin', 'Warehouse', 'Procurement'),
-    financials:   hasAnyRole(roles, 'Admin', 'Finance'),
+    masterData:  hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
+    purchases:   hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
+    sales:       hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
+    inventory:   hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
+    financials:  hasAnyRole(roles, 'Admin', 'Management'),
   };
 
-  // Within master data, which sub-links
+  // Master data: Coordination can see items/vendors/clients for lookups;
+  // only Admin can add/edit/delete (enforced on individual pages if needed)
   const masterChildren: MenuProps['items'] = [
-    ...(hasAnyRole(roles, 'Admin', 'Procurement', 'Sales', 'Warehouse')
-      ? [{ key: '/items', icon: <AppstoreOutlined />, label: 'Items' }] : []),
-    ...(hasAnyRole(roles, 'Admin', 'Procurement')
-      ? [{ key: '/purchase/vendors', icon: <ShopOutlined />, label: 'Vendors' }] : []),
-    ...(hasAnyRole(roles, 'Admin', 'Sales')
-      ? [{ key: '/sales/clients', icon: <TeamOutlined />, label: 'Clients' }] : []),
+    { key: '/items',            icon: <AppstoreOutlined />, label: 'Items' },
+    { key: '/purchase/vendors', icon: <ShopOutlined />,     label: 'Vendors' },
+    { key: '/sales/clients',    icon: <TeamOutlined />,     label: 'Clients' },
   ];
 
-  // Within purchases, which sub-links
   const purchaseChildren: MenuProps['items'] = [
-    ...(hasAnyRole(roles, 'Admin', 'Procurement')
-      ? [{ key: '/purchase/orders', icon: <FileTextOutlined />, label: 'Purchase Orders' }] : []),
-    ...(hasAnyRole(roles, 'Admin', 'Procurement', 'Warehouse')
-      ? [{ key: '/purchase/receipts', icon: <InboxOutlined />, label: 'Item Receipts' }] : []),
-    ...(hasAnyRole(roles, 'Admin', 'Procurement', 'Finance')
-      ? [{ key: '/purchase/bills', icon: <BankOutlined />, label: 'Vendor Bills' }] : []),
-    ...(hasAnyRole(roles, 'Admin', 'Procurement', 'Finance')
-      ? [{ key: '/purchase/payments', icon: <DollarOutlined />, label: 'Payments' }] : []),
+    { key: '/purchase/orders',   icon: <FileTextOutlined />, label: 'Purchase Orders' },
+    { key: '/purchase/receipts', icon: <InboxOutlined />,    label: 'Item Receipts' },
+    { key: '/purchase/bills',    icon: <BankOutlined />,     label: 'Vendor Bills' },
+    { key: '/purchase/payments', icon: <DollarOutlined />,   label: 'Payments' },
   ];
 
   const salesChildren: MenuProps['items'] = [
