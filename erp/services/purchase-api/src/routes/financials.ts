@@ -307,6 +307,46 @@ financialsRouter.get('/balance-sheet', async (req: Request, res: Response, next:
 });
 
 // =============================================================================
+// TRANSACTION REGISTER
+// All posted JE lines across all accounts — the full accounting ledger
+// GET /financials/transaction-register?from=&to=&account_code=&source_type=
+// =============================================================================
+
+financialsRouter.get('/transaction-register', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { from, to, account_code, source_type } = req.query;
+    const params: unknown[] = ['POSTED'];
+    let query = `
+      SELECT
+          je.entry_date,
+          je.doc_id           AS je_ref,
+          je.description      AS je_description,
+          je.source_type,
+          je.source_id,
+          a.account_code,
+          a.account_name,
+          a.account_type,
+          jel.description     AS line_description,
+          jel.debit,
+          jel.credit
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON je.je_id = jel.je_id
+        JOIN accounts a         ON a.account_id = jel.account_id
+       WHERE je.status = $1`;
+
+    if (from)         { params.push(from);         query += ` AND je.entry_date >= $${params.length}`; }
+    if (to)           { params.push(to);           query += ` AND je.entry_date <= $${params.length}`; }
+    if (account_code) { params.push(account_code); query += ` AND a.account_code = $${params.length}`; }
+    if (source_type)  { params.push(source_type);  query += ` AND je.source_type = $${params.length}`; }
+
+    query += ' ORDER BY je.entry_date, je.je_id, jel.line_seq';
+
+    const { rows } = await pool.query(query, params);
+    res.json({ success: true, data: rows });
+  } catch (e) { next(e); }
+});
+
+// =============================================================================
 // P&L
 // =============================================================================
 

@@ -3,8 +3,10 @@ import {
   Button, DatePicker, Typography, Spin, Alert,
   Row, Col, Card, Statistic, Table, message,
 } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
+import { exportToExcelMultiSheet } from '../../utils/exportExcel';
 
 const { Title, Text } = Typography;
 
@@ -60,6 +62,61 @@ export function BalanceSheet() {
         </Col>
         <Col>
           <Button type="primary" onClick={load}>Run</Button>
+        </Col>
+        <Col>
+          <Button
+            icon={<DownloadOutlined />}
+            disabled={!data}
+            onClick={() => {
+              if (!data) return;
+              const acctHeaders = [
+                { key: 'account_code', label: 'Code',    width: 10 },
+                { key: 'account_name', label: 'Account', width: 36 },
+                { key: 'balance',      label: 'Balance', width: 16 },
+              ];
+              exportToExcelMultiSheet([
+                {
+                  name: 'Assets',
+                  headers: acctHeaders,
+                  rows: [
+                    ...data.sections.ASSET.accounts as Record<string, unknown>[],
+                    { account_code: '', account_name: 'TOTAL ASSETS', balance: data.sections.ASSET.total },
+                  ],
+                },
+                {
+                  name: 'Liabilities',
+                  headers: acctHeaders,
+                  rows: [
+                    ...data.sections.LIABILITY.accounts as Record<string, unknown>[],
+                    { account_code: '', account_name: 'TOTAL LIABILITIES', balance: data.sections.LIABILITY.total },
+                  ],
+                },
+                {
+                  name: 'Equity',
+                  headers: acctHeaders,
+                  rows: [
+                    ...data.sections.EQUITY.accounts as Record<string, unknown>[],
+                    { account_code: '', account_name: 'TOTAL EQUITY', balance: data.sections.EQUITY.total },
+                  ],
+                },
+                {
+                  name: 'Summary',
+                  headers: [
+                    { key: 'label',  label: 'Section',  width: 24 },
+                    { key: 'amount', label: 'Total',     width: 16 },
+                  ],
+                  rows: [
+                    { label: 'Total Assets',      amount: data.sections.ASSET.total },
+                    { label: 'Total Liabilities', amount: data.sections.LIABILITY.total },
+                    { label: 'Total Equity',      amount: data.sections.EQUITY.total },
+                    { label: 'Balanced',          amount: data.balanced ? 'YES' : 'NO' },
+                  ],
+                },
+              ], `BalanceSheet_${asOf ?? dayjs().format('YYYY-MM-DD')}`);
+            }}
+          >
+            Export Excel
+          </Button>
         </Col>
       </Row>
 

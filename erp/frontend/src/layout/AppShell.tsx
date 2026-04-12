@@ -64,12 +64,13 @@ export function AppShell() {
   ];
 
   const financialsChildren: MenuProps['items'] = [
-    { key: '/financials/accounts',        icon: <BookOutlined />,      label: 'Chart of Accounts' },
-    { key: '/financials/journal-entries', icon: <TableOutlined />,     label: 'Journal Entries' },
-    { key: '/financials/general-ledger',  icon: <BarChartOutlined />,  label: 'General Ledger' },
-    { key: '/financials/trial-balance',   icon: <FundOutlined />,      label: 'Trial Balance' },
-    { key: '/financials/balance-sheet',   icon: <LineChartOutlined />, label: 'Balance Sheet' },
-    { key: '/financials/profit-loss',     icon: <LineChartOutlined />, label: 'Profit & Loss' },
+    { key: '/financials/accounts',             icon: <BookOutlined />,      label: 'Chart of Accounts' },
+    { key: '/financials/journal-entries',      icon: <TableOutlined />,     label: 'Journal Entries' },
+    { key: '/financials/transaction-register', icon: <DatabaseOutlined />,  label: 'Transaction Register' },
+    { key: '/financials/general-ledger',       icon: <BarChartOutlined />,  label: 'General Ledger' },
+    { key: '/financials/trial-balance',        icon: <FundOutlined />,      label: 'Trial Balance' },
+    { key: '/financials/balance-sheet',        icon: <LineChartOutlined />, label: 'Balance Sheet' },
+    { key: '/financials/profit-loss',          icon: <LineChartOutlined />, label: 'Profit & Loss' },
   ];
 
   const navItems = useMemo((): MenuProps['items'] => {

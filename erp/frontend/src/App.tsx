@@ -45,6 +45,7 @@ import { GeneralLedger }        from './pages/financials/GeneralLedger';
 import { TrialBalance }         from './pages/financials/TrialBalance';
 import { BalanceSheet }         from './pages/financials/BalanceSheet';
 import { ProfitLoss }           from './pages/financials/ProfitLoss';
+import { TransactionRegister }  from './pages/financials/TransactionRegister';
 
 export default function App() {
   return (
@@ -93,6 +94,7 @@ export default function App() {
                 <Route path="financials/trial-balance"          element={<TrialBalance />} />
                 <Route path="financials/balance-sheet"          element={<BalanceSheet />} />
                 <Route path="financials/profit-loss"            element={<ProfitLoss />} />
+                <Route path="financials/transaction-register"  element={<TransactionRegister />} />
               </Route>
             </Routes>
           </BrowserRouter>

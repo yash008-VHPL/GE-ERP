@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   Button, DatePicker, Typography, Spin, Row, Col,
-  Card, Statistic, Table, message,
+  Card, Statistic, Table, message, Space,
 } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
+import { exportToExcelMultiSheet } from '../../utils/exportExcel';
 
 const { Title, Text } = Typography;
 
@@ -66,7 +68,54 @@ export function ProfitLoss() {
         <Col>
           <Button type="primary" onClick={load}>Run</Button>
         </Col>
+        <Col>
+          <Button
+            icon={<DownloadOutlined />}
+            disabled={!data}
+            onClick={() => {
+              if (!data) return;
+              const acctHeaders = [
+                { key: 'account_code', label: 'Code',    width: 10 },
+                { key: 'account_name', label: 'Account', width: 36 },
+                { key: 'balance',      label: 'Amount',  width: 16 },
+              ];
+              exportToExcelMultiSheet([
+                {
+                  name: 'Revenue',
+                  headers: acctHeaders,
+                  rows: [
+                    ...data.revenue as Record<string, unknown>[],
+                    { account_code: '', account_name: 'TOTAL REVENUE', balance: data.total_revenue },
+                  ],
+                },
+                {
+                  name: 'Expenses',
+                  headers: acctHeaders,
+                  rows: [
+                    ...data.expenses as Record<string, unknown>[],
+                    { account_code: '', account_name: 'TOTAL EXPENSES', balance: data.total_expenses },
+                  ],
+                },
+                {
+                  name: 'Summary',
+                  headers: [
+                    { key: 'label',  label: 'Item',   width: 24 },
+                    { key: 'amount', label: 'Amount', width: 16 },
+                  ],
+                  rows: [
+                    { label: 'Total Revenue',  amount: data.total_revenue },
+                    { label: 'Total Expenses', amount: data.total_expenses },
+                    { label: 'Net Income',     amount: data.net_income },
+                  ],
+                },
+              ], `PnL_${from}_to_${to}`);
+            }}
+          >
+            Export Excel
+          </Button>
+        </Col>
       </Row>
+      <Space />
 
       {loading && <Spin />}
 

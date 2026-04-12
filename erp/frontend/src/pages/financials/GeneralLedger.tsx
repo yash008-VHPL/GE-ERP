@@ -3,8 +3,10 @@ import {
   Table, Button, Select, DatePicker, Typography,
   Spin, Alert, Descriptions, message, Space, Row, Col,
 } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
+import { exportToExcel } from '../../utils/exportExcel';
 
 const { Title, Text } = Typography;
 
@@ -112,6 +114,48 @@ export function GeneralLedger() {
         </Col>
         <Col>
           <Button type="primary" onClick={load} disabled={!code}>Load</Button>
+        </Col>
+        <Col>
+          <Button
+            icon={<DownloadOutlined />}
+            disabled={!data}
+            onClick={() => {
+              if (!data) return;
+              const filename = `GL_${data.account.account_code}_${dayjs().format('YYYY-MM-DD')}`;
+              exportToExcel(
+                [
+                  // Opening balance row
+                  { date: '', doc_id: '', je_description: 'Opening Balance', line_description: '', debit: '', credit: '', running_balance: data.opening_balance },
+                  ...data.lines.map(l => ({
+                    date: dayjs(l.entry_date).format('DD MMM YYYY'),
+                    doc_id: l.doc_id,
+                    je_description: l.je_description,
+                    line_description: l.line_description ?? '',
+                    source_type: l.source_type,
+                    debit: parseFloat(l.debit) || '',
+                    credit: parseFloat(l.credit) || '',
+                    running_balance: l.running_balance,
+                  })),
+                  // Closing balance row
+                  { date: '', doc_id: '', je_description: 'Closing Balance', line_description: '', debit: '', credit: '', running_balance: data.closing_balance },
+                ],
+                [
+                  { key: 'date',            label: 'Date',         width: 14 },
+                  { key: 'doc_id',          label: 'JE Ref',       width: 18 },
+                  { key: 'je_description',  label: 'Description',  width: 32 },
+                  { key: 'line_description',label: 'Line Detail',  width: 24 },
+                  { key: 'source_type',     label: 'Source',       width: 16 },
+                  { key: 'debit',           label: 'Debit',        width: 14 },
+                  { key: 'credit',          label: 'Credit',       width: 14 },
+                  { key: 'running_balance', label: 'Balance',      width: 14 },
+                ],
+                filename,
+                `${data.account.account_code} — ${data.account.account_name}`,
+              );
+            }}
+          >
+            Export Excel
+          </Button>
         </Col>
       </Row>
 

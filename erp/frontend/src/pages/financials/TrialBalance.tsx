@@ -3,8 +3,10 @@ import {
   Table, Button, DatePicker, Typography, Spin, Alert, Tag,
   Row, Col, Statistic, Card, message,
 } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
+import { exportToExcel } from '../../utils/exportExcel';
 
 const { Title, Text } = Typography;
 
@@ -87,6 +89,33 @@ export function TrialBalance() {
         </Col>
         <Col>
           <Button type="primary" onClick={load}>Run</Button>
+        </Col>
+        <Col>
+          <Button
+            icon={<DownloadOutlined />}
+            disabled={!data}
+            onClick={() => {
+              if (!data) return;
+              exportToExcel(
+                [
+                  ...data.rows,
+                  { account_code: 'TOTAL', account_name: '', account_type: '', total_debit: data.total_debit, total_credit: data.total_credit, balance: '' },
+                ],
+                [
+                  { key: 'account_code',  label: 'Code',         width: 10 },
+                  { key: 'account_name',  label: 'Account',      width: 36 },
+                  { key: 'account_type',  label: 'Type',         width: 12 },
+                  { key: 'total_debit',   label: 'Dr Balance',   width: 16 },
+                  { key: 'total_credit',  label: 'Cr Balance',   width: 16 },
+                  { key: 'balance',       label: 'Net Balance',  width: 16 },
+                ],
+                `TrialBalance_${asOf ?? dayjs().format('YYYY-MM-DD')}`,
+                'Trial Balance',
+              );
+            }}
+          >
+            Export Excel
+          </Button>
         </Col>
       </Row>
 
