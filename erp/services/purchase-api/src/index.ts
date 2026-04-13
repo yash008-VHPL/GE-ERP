@@ -15,6 +15,7 @@ import { fulfillmentsRouter }   from './routes/fulfillments';
 import { invoicesRouter }       from './routes/invoices';
 import { financialsRouter }     from './routes/financials';
 import { inventoryLotsRouter }  from './routes/inventoryLots';
+import { amendmentsRouter }     from './routes/amendments';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/fulfillments',    fulfillmentsRouter);
 app.use('/invoices',        invoicesRouter);
 app.use('/financials',      financialsRouter);
 app.use('/inventory-lots',  inventoryLotsRouter);
+app.use('/amendments',      amendmentsRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[error]', err.message);

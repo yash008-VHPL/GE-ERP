@@ -30,7 +30,9 @@ import { ClientList }           from './pages/sales/ClientList';
 import { SOList }               from './pages/sales/SOList';
 import { SOCreate }             from './pages/sales/SOCreate';
 import { FulfillmentList }      from './pages/sales/FulfillmentList';
+import { FulfillmentDetail }    from './pages/sales/FulfillmentDetail';
 import { InvoiceList }          from './pages/sales/InvoiceList';
+import { InvoiceDetail }        from './pages/sales/InvoiceDetail';
 import { ClientPaymentList }    from './pages/sales/ClientPaymentList';
 
 // Inventory
@@ -79,9 +81,9 @@ export default function App() {
                 <Route path="sales/orders"               element={<SOList />} />
                 <Route path="sales/orders/new"           element={<SOCreate />} />
                 <Route path="sales/fulfillments"         element={<FulfillmentList />} />
-                <Route path="sales/fulfillments/:docId"  element={<Typography.Text>Fulfillment detail coming soon</Typography.Text>} />
+                <Route path="sales/fulfillments/:docId"  element={<FulfillmentDetail />} />
                 <Route path="sales/invoices/new"         element={<Typography.Text>Invoice create coming soon</Typography.Text>} />
-                <Route path="sales/invoices/:docId"      element={<Typography.Text>Invoice detail coming soon</Typography.Text>} />
+                <Route path="sales/invoices/:docId"      element={<InvoiceDetail />} />
                 <Route path="sales/invoices"             element={<InvoiceList />} />
                 <Route path="sales/payments"             element={<ClientPaymentList />} />
 

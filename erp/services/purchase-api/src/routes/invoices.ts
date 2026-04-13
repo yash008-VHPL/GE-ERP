@@ -131,6 +131,81 @@ invoicesRouter.post('/:docId/post', async (req: Request, res: Response, next: Ne
   } catch (e) { next(e); }
 });
 
+// PATCH /invoices/:docId — edit mutable fields with mandatory amendment note
+invoicesRouter.patch('/:docId', async (req: Request, res: Response, next: NextFunction) => {
+  const { dueDate, clientRef, notes, changeNote } = req.body;
+
+  if (!changeNote?.trim()) {
+    res.status(400).json({ error: 'changeNote is required — please explain what changed and why.' });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: [current] } = await client.query(
+      `SELECT * FROM client_invoices WHERE doc_id = $1`, [req.params.docId]
+    );
+    if (!current) { res.status(404).json({ error: 'Not found' }); return; }
+
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+    const setClauses: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+
+    const curDue = current.due_date?.toISOString?.().split('T')[0] ?? current.due_date ?? null;
+    if (dueDate !== undefined && (dueDate || null) !== curDue) {
+      oldValues.due_date = curDue;
+      newValues.due_date = dueDate || null;
+      setClauses.push(`due_date = $${idx++}`);
+      params.push(dueDate || null);
+    }
+    if (clientRef !== undefined && (clientRef || null) !== (current.client_ref ?? null)) {
+      oldValues.client_ref = current.client_ref;
+      newValues.client_ref = clientRef || null;
+      setClauses.push(`client_ref = $${idx++}`);
+      params.push(clientRef || null);
+    }
+    if (notes !== undefined && (notes || null) !== (current.notes ?? null)) {
+      oldValues.notes = current.notes;
+      newValues.notes = notes || null;
+      setClauses.push(`notes = $${idx++}`);
+      params.push(notes || null);
+    }
+
+    if (setClauses.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(400).json({ error: 'No changes detected.' });
+      return;
+    }
+
+    setClauses.push(`updated_at = now()`);
+    params.push(req.params.docId);
+    const { rows: [updated] } = await client.query(
+      `UPDATE client_invoices SET ${setClauses.join(', ')} WHERE doc_id = $${idx} RETURNING *`,
+      params
+    );
+
+    await client.query(
+      `INSERT INTO record_amendments
+         (table_name, record_id, doc_id, changed_by, change_note, old_values, new_values)
+       VALUES ('client_invoices', $1, $2, $3, $4, $5, $6)`,
+      [current.inv_id, current.doc_id, req.userName, changeNote.trim(),
+       JSON.stringify(oldValues), JSON.stringify(newValues)]
+    );
+
+    await client.query('COMMIT');
+    res.json({ data: updated });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    next(e);
+  } finally {
+    client.release();
+  }
+});
+
 // POST /invoices/:docId/payment — record a client invoice payment
 invoicesRouter.post('/:docId/payment', async (req: Request, res: Response, next: NextFunction) => {
   const client = await pool.connect();

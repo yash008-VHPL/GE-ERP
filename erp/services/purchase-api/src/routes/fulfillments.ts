@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { pool } from '../config/db';
 import { requireAuth } from '../middleware/auth';
 
@@ -82,7 +82,7 @@ fulfillmentsRouter.post('/', async (req, res, next) => {
   }
 });
 
-// PATCH /fulfillments/:docId/status
+// PATCH /fulfillments/:docId/status  (legacy — kept for compatibility)
 fulfillmentsRouter.patch('/:docId/status', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
@@ -92,4 +92,80 @@ fulfillmentsRouter.patch('/:docId/status', async (req, res, next) => {
     if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
     res.json({ data: rows[0] });
   } catch (e) { next(e); }
+});
+
+// PATCH /fulfillments/:docId — general edit with mandatory amendment note
+fulfillmentsRouter.patch('/:docId', async (req: Request, res: Response, next: NextFunction) => {
+  const { notes, fulfillmentDate, status, changeNote } = req.body;
+
+  if (!changeNote?.trim()) {
+    res.status(400).json({ error: 'changeNote is required — please explain what changed and why.' });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: [current] } = await client.query(
+      `SELECT * FROM item_fulfillments WHERE doc_id = $1`, [req.params.docId]
+    );
+    if (!current) { res.status(404).json({ error: 'Not found' }); return; }
+
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+    const setClauses: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+
+    if (notes !== undefined && notes !== current.notes) {
+      oldValues.notes = current.notes;      newValues.notes = notes;
+      setClauses.push(`notes = $${idx++}`);
+      params.push(notes ?? null);
+    }
+    if (fulfillmentDate) {
+      const cur = current.fulfillment_date?.toISOString?.().split('T')[0] ?? current.fulfillment_date;
+      if (fulfillmentDate !== cur) {
+        oldValues.fulfillment_date = cur;
+        newValues.fulfillment_date = fulfillmentDate;
+        setClauses.push(`fulfillment_date = $${idx++}`);
+        params.push(fulfillmentDate);
+      }
+    }
+    if (status && status !== current.status) {
+      oldValues.status = current.status;
+      newValues.status = status;
+      setClauses.push(`status = $${idx++}`);
+      params.push(status);
+    }
+
+    if (setClauses.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(400).json({ error: 'No changes detected.' });
+      return;
+    }
+
+    setClauses.push(`updated_at = now()`);
+    params.push(req.params.docId);
+    const { rows: [updated] } = await client.query(
+      `UPDATE item_fulfillments SET ${setClauses.join(', ')} WHERE doc_id = $${idx} RETURNING *`,
+      params
+    );
+
+    await client.query(
+      `INSERT INTO record_amendments
+         (table_name, record_id, doc_id, changed_by, change_note, old_values, new_values)
+       VALUES ('item_fulfillments', $1, $2, $3, $4, $5, $6)`,
+      [current.itf_id, current.doc_id, req.userName, changeNote.trim(),
+       JSON.stringify(oldValues), JSON.stringify(newValues)]
+    );
+
+    await client.query('COMMIT');
+    res.json({ data: updated });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    next(e);
+  } finally {
+    client.release();
+  }
 });
