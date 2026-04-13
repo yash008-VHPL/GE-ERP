@@ -307,6 +307,77 @@ financialsRouter.get('/balance-sheet', async (req: Request, res: Response, next:
 });
 
 // =============================================================================
+// NAV SUMMARY — management dashboard KPIs
+// Returns four figures based on all posted journal entries as of today:
+//   total_assets, inventory_value, receivables_other_assets,
+//   total_liabilities, net_asset_value
+// GET /financials/nav-summary
+// =============================================================================
+financialsRouter.get('/nav-summary', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        a.account_code,
+        a.account_type,
+        a.normal_balance,
+        a.gnucash_type,
+        a.parent_code,
+        CASE a.normal_balance
+          WHEN 'DR' THEN COALESCE(SUM(jel.debit),  0) - COALESCE(SUM(jel.credit), 0)
+          WHEN 'CR' THEN COALESCE(SUM(jel.credit), 0) - COALESCE(SUM(jel.debit),  0)
+        END AS balance
+      FROM accounts a
+      LEFT JOIN journal_entry_lines jel ON jel.account_id = a.account_id
+      LEFT JOIN journal_entries je
+             ON je.je_id = jel.je_id AND je.status = 'POSTED'
+      WHERE a.is_active = TRUE
+        AND a.account_type IN ('ASSET','LIABILITY')
+        AND a.parent_code IS NOT NULL   -- exclude header/summary accounts (1000, 2000)
+      GROUP BY a.account_id, a.account_code, a.account_type, a.normal_balance, a.gnucash_type, a.parent_code
+    `);
+
+    let totalAssets            = 0;
+    let inventoryValue         = 0;
+    let bankValue              = 0;
+    let receivablesValue       = 0;
+    let totalLiabilities       = 0;
+
+    for (const r of rows) {
+      const bal = parseFloat(r.balance) || 0;
+      if (r.account_type === 'ASSET') {
+        totalAssets += bal;
+        if (r.parent_code === '1300' || r.account_code === '1300') {
+          inventoryValue += bal;
+        } else if (r.gnucash_type === 'BANK') {
+          bankValue += bal;
+        } else if (r.gnucash_type === 'RECEIVABLE') {
+          receivablesValue += bal;
+        }
+      } else if (r.account_type === 'LIABILITY') {
+        totalLiabilities += bal;
+      }
+    }
+
+    const otherAssets           = totalAssets - inventoryValue - bankValue - receivablesValue;
+    const netAssetValue         = totalAssets - totalLiabilities;
+
+    res.json({
+      success: true,
+      data: {
+        net_asset_value:          parseFloat(netAssetValue.toFixed(2)),
+        total_assets:             parseFloat(totalAssets.toFixed(2)),
+        inventory_value:          parseFloat(inventoryValue.toFixed(2)),
+        bank_value:               parseFloat(bankValue.toFixed(2)),
+        receivables_value:        parseFloat(receivablesValue.toFixed(2)),
+        other_assets_value:       parseFloat(otherAssets.toFixed(2)),
+        receivables_other_assets: parseFloat((receivablesValue + otherAssets).toFixed(2)),
+        total_liabilities:        parseFloat(totalLiabilities.toFixed(2)),
+      },
+    });
+  } catch (e) { next(e); }
+});
+
+// =============================================================================
 // TRANSACTION REGISTER
 // All posted JE lines across all accounts — the full accounting ledger
 // GET /financials/transaction-register?from=&to=&account_code=&source_type=

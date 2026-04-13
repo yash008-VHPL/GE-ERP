@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Card, Col, Row, Statistic, Typography, Button, Space, Tag, Spin } from 'antd';
+import { Card, Col, Row, Statistic, Typography, Button, Space, Tag, Spin, Divider, Tooltip } from 'antd';
 import {
   FileTextOutlined, InboxOutlined, BankOutlined, DollarOutlined,
   ShoppingCartOutlined, SendOutlined, FileDoneOutlined, StockOutlined,
   BookOutlined, ArrowRightOutlined, WarningOutlined,
+  RiseOutlined, GoldOutlined, FallOutlined, WalletOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
@@ -26,6 +28,17 @@ interface StatCard {
   color: string;
 }
 
+interface NavSummary {
+  net_asset_value: number;
+  total_assets: number;
+  inventory_value: number;
+  bank_value: number;
+  receivables_value: number;
+  other_assets_value: number;
+  receivables_other_assets: number;
+  total_liabilities: number;
+}
+
 function greeting() {
   const h = dayjs().hour();
   if (h < 12) return 'Good morning';
@@ -37,6 +50,13 @@ function greeting() {
 function count(list: any[], ...statuses: string[]): number {
   if (!statuses.length) return list.length;
   return list.filter(i => statuses.includes(i.status)).length;
+}
+
+function fmtCcy(value: number, decimals = 0): string {
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 }
 
 export function Dashboard() {
@@ -52,7 +72,8 @@ export function Dashboard() {
   const showFinancials  = hasAnyRole(roles, 'Admin', 'Management');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [data, setData] = useState<Record<string, any[]>>({});
+  const [data, setData]       = useState<Record<string, any[]>>({});
+  const [nav, setNav]         = useState<NavSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,21 +94,32 @@ export function Dashboard() {
       endpoints.lots = '/inventory-lots';
     }
     if (showFinancials) {
-      endpoints.journals = '/journal-entries';
+      endpoints.journals = '/financials/journal-entries';
     }
 
-    Promise.allSettled(
-      Object.entries(endpoints).map(([key, url]) =>
-        purchaseApi.get(url)
-          .then(r => ({ key, list: r.data.data ?? [] }))
-          .catch(() => ({ key, list: [] }))
-      )
-    ).then(results => {
+    const listFetches = Object.entries(endpoints).map(([key, url]) =>
+      purchaseApi.get(url)
+        .then(r => ({ key, list: r.data.data ?? [] }))
+        .catch(() => ({ key, list: [] }))
+    );
+
+    const navFetch = showFinancials
+      ? purchaseApi.get('/financials/nav-summary')
+          .then(r => r.data.data as NavSummary)
+          .catch(() => null)
+      : Promise.resolve(null);
+
+    Promise.all([
+      Promise.allSettled(listFetches),
+      navFetch,
+    ]).then(([listResults, navData]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const map: Record<string, any[]> = {};
-      results.forEach(r => {
+      listResults.forEach(r => {
         if (r.status === 'fulfilled') map[r.value.key] = r.value.list;
       });
       setData(map);
+      setNav(navData);
       setLoading(false);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,7 +286,7 @@ export function Dashboard() {
         </Title>
         <Space style={{ marginTop: 4 }}>
           <Text type="secondary">{dayjs().format('dddd, D MMMM YYYY')}</Text>
-            {roles.map(r => (
+          {roles.map(r => (
             <Tag key={r} color={
               r === 'Admin' ? 'gold' : r === 'Management' ? 'purple' : 'blue'
             }>{r}</Tag>
@@ -262,7 +294,171 @@ export function Dashboard() {
         </Space>
       </div>
 
-      {/* Procurement section */}
+      {/* ── Net Asset Value panel (Management / Admin only) ── */}
+      {showFinancials && nav && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+            <RiseOutlined style={{ color: '#1B2A4A' }} />
+            <Text strong>Company Position</Text>
+            <Tooltip title="Calculated from all posted journal entries as of today. Currency: EUR (functional currency).">
+              <InfoCircleOutlined style={{ color: '#aaa', fontSize: 12 }} />
+            </Tooltip>
+          </div>
+
+          {/* Hero: NAV */}
+          <Card
+            style={{
+              marginBottom: 16,
+              background: '#1B2A4A',
+              borderRadius: 8,
+              border: 'none',
+            }}
+            styles={{ body: { padding: '20px 28px' } }}
+          >
+            <Row align="middle" gutter={32}>
+              <Col xs={24} md={8}>
+                <Text style={{ color: '#B8860B', fontSize: 13, display: 'block', marginBottom: 4 }}>
+                  NET ASSET VALUE
+                </Text>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <Text style={{ color: '#fff', fontSize: 13 }}>EUR</Text>
+                  <span style={{
+                    color: nav.net_asset_value >= 0 ? '#52c41a' : '#ff4d4f',
+                    fontSize: 38,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                  }}>
+                    {fmtCcy(nav.net_asset_value)}
+                  </span>
+                </div>
+                <Text style={{ color: '#8ca0c0', fontSize: 12, marginTop: 4, display: 'block' }}>
+                  Total Assets − Total Liabilities
+                </Text>
+              </Col>
+              <Col xs={0} md={1}>
+                <Divider type="vertical" style={{ height: 60, borderColor: '#2d4068' }} />
+              </Col>
+              <Col xs={24} md={15}>
+                <Row gutter={[24, 16]}>
+                  <Col xs={12} sm={6}>
+                    <Text style={{ color: '#8ca0c0', fontSize: 11, display: 'block' }}>TOTAL ASSETS</Text>
+                    <Text style={{ color: '#e8edf5', fontSize: 18, fontWeight: 700 }}>
+                      {fmtCcy(nav.total_assets)}
+                    </Text>
+                  </Col>
+                  <Col xs={12} sm={6}>
+                    <Text style={{ color: '#8ca0c0', fontSize: 11, display: 'block' }}>TOTAL LIABILITIES</Text>
+                    <Text style={{ color: '#e8edf5', fontSize: 18, fontWeight: 700 }}>
+                      {fmtCcy(nav.total_liabilities)}
+                    </Text>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Breakdown: 3 asset categories */}
+          <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+            <Col xs={24} sm={8}>
+              <Card
+                size="small"
+                style={{ borderTop: '3px solid #d4b10e', height: '100%' }}
+                styles={{ body: { padding: '16px 20px' } }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }} size={6}>
+                  <Space>
+                    <GoldOutlined style={{ color: '#d4a017', fontSize: 18 }} />
+                    <Text type="secondary" style={{ fontSize: 13 }}>Inventory Value</Text>
+                    <Tooltip title="Sum of all STOCK accounts (1301–1308) from posted journal entries.">
+                      <InfoCircleOutlined style={{ color: '#ccc', fontSize: 11 }} />
+                    </Tooltip>
+                  </Space>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, marginRight: 6 }}>EUR</Text>
+                    <Text style={{ fontSize: 28, fontWeight: 700 }}>
+                      {fmtCcy(nav.inventory_value)}
+                    </Text>
+                  </div>
+                  <Button
+                    type="link" size="small" icon={<ArrowRightOutlined />}
+                    onClick={() => navigate('/inventory/lots')}
+                    style={{ padding: 0, height: 'auto', fontSize: 12 }}
+                  >
+                    View Lots
+                  </Button>
+                </Space>
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={8}>
+              <Card
+                size="small"
+                style={{ borderTop: '3px solid #ff4d4f', height: '100%' }}
+                styles={{ body: { padding: '16px 20px' } }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }} size={6}>
+                  <Space>
+                    <FallOutlined style={{ color: '#cf1322', fontSize: 18 }} />
+                    <Text type="secondary" style={{ fontSize: 13 }}>Payables &amp; Liabilities</Text>
+                    <Tooltip title="Sum of all LIABILITY accounts (AP, loans, salary payable, etc.) from posted journal entries.">
+                      <InfoCircleOutlined style={{ color: '#ccc', fontSize: 11 }} />
+                    </Tooltip>
+                  </Space>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, marginRight: 6 }}>EUR</Text>
+                    <Text style={{ fontSize: 28, fontWeight: 700, color: nav.total_liabilities > 0 ? '#cf1322' : '#262626' }}>
+                      {fmtCcy(nav.total_liabilities)}
+                    </Text>
+                  </div>
+                  <Button
+                    type="link" size="small" icon={<ArrowRightOutlined />}
+                    onClick={() => navigate('/financials/balance-sheet')}
+                    style={{ padding: 0, height: 'auto', fontSize: 12 }}
+                  >
+                    View Balance Sheet
+                  </Button>
+                </Space>
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={8}>
+              <Card
+                size="small"
+                style={{ borderTop: '3px solid #1677ff', height: '100%' }}
+                styles={{ body: { padding: '16px 20px' } }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }} size={6}>
+                  <Space>
+                    <WalletOutlined style={{ color: '#1677ff', fontSize: 18 }} />
+                    <Text type="secondary" style={{ fontSize: 13 }}>Receivables &amp; Other Assets</Text>
+                    <Tooltip title="AR Goods (1200) plus other non-inventory, non-bank assets. Excludes cash held in Wise accounts.">
+                      <InfoCircleOutlined style={{ color: '#ccc', fontSize: 11 }} />
+                    </Tooltip>
+                  </Space>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, marginRight: 6 }}>EUR</Text>
+                    <Text style={{ fontSize: 28, fontWeight: 700, color: '#0958d9' }}>
+                      {fmtCcy(nav.receivables_other_assets)}
+                    </Text>
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    AR: {fmtCcy(nav.receivables_value)} · Other: {fmtCcy(nav.other_assets_value)}
+                  </Text>
+                  <Button
+                    type="link" size="small" icon={<ArrowRightOutlined />}
+                    onClick={() => navigate('/financials/general-ledger')}
+                    style={{ padding: 0, height: 'auto', fontSize: 12 }}
+                  >
+                    View General Ledger
+                  </Button>
+                </Space>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
+
+      {/* ── Procurement ── */}
       {showProcurement && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, gap: 8 }}>
@@ -279,7 +475,7 @@ export function Dashboard() {
         </>
       )}
 
-      {/* Sales section */}
+      {/* ── Sales ── */}
       {showSales && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, gap: 8 }}>
@@ -296,7 +492,7 @@ export function Dashboard() {
         </>
       )}
 
-      {/* Inventory + Financials quick links */}
+      {/* ── Inventory + Journals ── */}
       <Row gutter={[16, 16]}>
         {showInventory && (
           <Col xs={24} sm={12} lg={6}>
