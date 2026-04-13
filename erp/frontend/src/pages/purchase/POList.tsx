@@ -109,6 +109,7 @@ export function POList() {
 
       <Table
         rowKey="puo_id"
+          scroll={{ x: 900 }}
         dataSource={orders}
         columns={columns}
         loading={loading}

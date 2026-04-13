@@ -76,7 +76,7 @@ export function SOList() {
         </Button>
       </div>
       <Table
-        rowKey="sao_id" dataSource={orders} columns={columns} loading={loading} size="small"
+        rowKey="sao_id" scroll={{ x: 900 }} dataSource={orders} columns={columns} loading={loading} size="small"
         onRow={row => ({ onClick: () => navigate(`/sales/orders/${row.doc_id}`) })}
         pagination={{ pageSize: 20 }}
       />

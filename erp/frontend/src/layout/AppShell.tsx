@@ -208,7 +208,7 @@ export function AppShell() {
           </Dropdown>
         </Header>
 
-        <Content style={{ margin: 20, padding: 24, background: '#fff', borderRadius: 6, minHeight: 360 }}>
+        <Content style={{ margin: 20, padding: 24, background: '#fff', borderRadius: 6, minHeight: 360, overflow: 'auto' }}>
           <Outlet />
         </Content>
       </Layout>

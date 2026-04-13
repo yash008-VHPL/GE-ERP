@@ -81,6 +81,7 @@ export function ReceiptList() {
       </div>
       <Table
         rowKey="itr_id"
+        scroll={{ x: 800 }}
         dataSource={receipts}
         columns={columns}
         loading={loading}

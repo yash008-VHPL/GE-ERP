@@ -95,6 +95,7 @@ export function FulfillmentList() {
           dataSource={fulfillments}
           columns={columns}
           size="small"
+          scroll={{ x: 800 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
           onRow={row => ({
             onClick: () => navigate(`/sales/fulfillments/${row.doc_id}`),

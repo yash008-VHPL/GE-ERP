@@ -115,6 +115,7 @@ export function ClientPaymentList() {
           dataSource={payments}
           columns={columns}
           size="small"
+          scroll={{ x: 1000 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
         />
       )}

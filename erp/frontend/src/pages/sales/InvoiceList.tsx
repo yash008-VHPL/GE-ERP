@@ -151,6 +151,7 @@ export function InvoiceList() {
           dataSource={invoices}
           columns={columns}
           size="small"
+          scroll={{ x: 1100 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
           onRow={row => ({
             onClick: () => navigate(`/sales/invoices/${row.doc_id}`),

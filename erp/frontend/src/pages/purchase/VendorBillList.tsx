@@ -149,6 +149,7 @@ export function VendorBillList() {
           dataSource={bills}
           columns={columns}
           size="small"
+          scroll={{ x: 1200 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
         />
       )}
