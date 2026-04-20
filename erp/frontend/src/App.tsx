@@ -32,7 +32,9 @@ import { SOCreate }             from './pages/sales/SOCreate';
 import { FulfillmentList }      from './pages/sales/FulfillmentList';
 import { FulfillmentDetail }    from './pages/sales/FulfillmentDetail';
 import { InvoiceList }          from './pages/sales/InvoiceList';
+import { InvoiceCreate }        from './pages/sales/InvoiceCreate';
 import { InvoiceDetail }        from './pages/sales/InvoiceDetail';
+import { InvoicePrint }         from './pages/sales/InvoicePrint';
 import { ClientPaymentList }    from './pages/sales/ClientPaymentList';
 
 // Inventory
@@ -82,9 +84,10 @@ export default function App() {
                 <Route path="sales/orders/new"           element={<SOCreate />} />
                 <Route path="sales/fulfillments"         element={<FulfillmentList />} />
                 <Route path="sales/fulfillments/:docId"  element={<FulfillmentDetail />} />
-                <Route path="sales/invoices/new"         element={<Typography.Text>Invoice create coming soon</Typography.Text>} />
-                <Route path="sales/invoices/:docId"      element={<InvoiceDetail />} />
-                <Route path="sales/invoices"             element={<InvoiceList />} />
+                <Route path="sales/invoices/new"              element={<InvoiceCreate />} />
+                <Route path="sales/invoices/:docId/print" element={<InvoicePrint />} />
+                <Route path="sales/invoices/:docId"       element={<InvoiceDetail />} />
+                <Route path="sales/invoices"              element={<InvoiceList />} />
                 <Route path="sales/payments"             element={<ClientPaymentList />} />
 
                 {/* Inventory */}

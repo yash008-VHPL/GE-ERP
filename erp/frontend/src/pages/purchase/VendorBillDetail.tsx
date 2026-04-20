@@ -7,11 +7,13 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined, DeleteOutlined,
-  CheckCircleOutlined, DollarOutlined,
+  CheckCircleOutlined, DollarOutlined, EditOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
 import { StatusTag } from '../../components/purchase/StatusTag';
+import { EditWithCommentModal } from '../../components/common/EditWithCommentModal';
+import { AmendmentHistory } from '../../components/common/AmendmentHistory';
 import type { VendorBill } from '../../types/purchase';
 
 const { Title, Text } = Typography;
@@ -37,6 +39,9 @@ export function VendorBillDetail() {
   const [posting, setPosting]     = useState(false);
   const [payModal, setPayModal]   = useState(false);
   const [paying, setPaying]       = useState(false);
+  const [editOpen, setEditOpen]   = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [amendKey, setAmendKey]   = useState(0);
   const [payForm] = Form.useForm();
 
   const reload = () => {
@@ -92,6 +97,30 @@ export function VendorBillDetail() {
       message.error(err.response?.data?.error ?? 'Failed to record payment');
     } finally {
       setPaying(false);
+    }
+  };
+
+  const handleEdit = async (values: Record<string, unknown>) => {
+    setSaving(true);
+    try {
+      await purchaseApi.patch(`/vendor-bills/${docId}`, {
+        vendorInvRef: values.vendorInvRef ?? null,
+        billDate:     bill?.status === 'DRAFT' && values.billDate
+                        ? (values.billDate as dayjs.Dayjs).format('YYYY-MM-DD') : undefined,
+        dueDate:      values.dueDate
+                        ? (values.dueDate as dayjs.Dayjs).format('YYYY-MM-DD') : null,
+        notes:        values.notes ?? null,
+        changeNote:   values.changeNote,
+      });
+      message.success('Bill updated');
+      setEditOpen(false);
+      setAmendKey(k => k + 1);
+      reload();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      message.error(err.response?.data?.error ?? 'Save failed');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -204,6 +233,10 @@ export function VendorBillDetail() {
       <Divider />
 
       <Space>
+        {['DRAFT','POSTED','PARTIALLY_PAID'].includes(bill.status) && (
+          <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>Edit</Button>
+        )}
+
         {bill.status === 'DRAFT' && (
           <Popconfirm
             title="Post this bill?"
@@ -235,6 +268,41 @@ export function VendorBillDetail() {
           </Popconfirm>
         )}
       </Space>
+
+      {/* Amendment history */}
+      <Divider orientation="left">Amendment History</Divider>
+      <AmendmentHistory docId={bill.doc_id} refreshKey={amendKey} />
+
+      {/* Edit modal */}
+      <EditWithCommentModal
+        open={editOpen}
+        title={`Edit Bill — ${bill.doc_id}`}
+        submitting={saving}
+        onCancel={() => setEditOpen(false)}
+        onSubmit={handleEdit}
+        fields={[
+          {
+            name: 'vendorInvRef', label: 'Vendor Invoice Reference',
+            initialValue: bill.vendor_inv_ref ?? '',
+            element: <Input placeholder="Supplier's own invoice number…" />,
+          },
+          ...(bill.status === 'DRAFT' ? [{
+            name: 'billDate', label: 'Bill Date',
+            initialValue: dayjs(bill.bill_date),
+            element: <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />,
+          }] : []),
+          {
+            name: 'dueDate', label: 'Due Date',
+            initialValue: bill.due_date ? dayjs(bill.due_date) : null,
+            element: <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />,
+          },
+          {
+            name: 'notes', label: 'Notes',
+            initialValue: bill.notes ?? '',
+            element: <Input.TextArea rows={2} />,
+          },
+        ]}
+      />
 
       {/* Payment modal */}
       <Modal

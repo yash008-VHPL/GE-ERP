@@ -7,7 +7,7 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined, EditOutlined,
-  CheckCircleOutlined, DollarOutlined,
+  CheckCircleOutlined, DollarOutlined, PrinterOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
@@ -232,6 +232,12 @@ export function InvoiceDetail() {
               Edit
             </Button>
           )}
+          <Button
+            icon={<PrinterOutlined />}
+            onClick={() => window.open(`/sales/invoices/${inv.doc_id}/print`, '_blank')}
+          >
+            Print / PDF
+          </Button>
           {canPost && (
             <Button
               type="primary"

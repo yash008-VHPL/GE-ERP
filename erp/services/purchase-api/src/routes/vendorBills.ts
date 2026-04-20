@@ -137,6 +137,73 @@ vendorBillsRouter.post('/', requireAuth, async (req: Request, res: Response, nex
   finally { client.release(); }
 });
 
+// PATCH /vendor-bills/:docId — edit mutable fields with mandatory amendment note
+vendorBillsRouter.patch('/:docId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  const { vendorInvRef, billDate, dueDate, notes, changeNote } = req.body;
+  if (!changeNote?.trim()) {
+    res.status(400).json({ error: 'changeNote is required — please explain what changed and why.' });
+    return;
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: [current] } = await client.query(
+      `SELECT * FROM vendor_bills WHERE doc_id = $1`, [req.params.docId]
+    );
+    if (!current) { res.status(404).json({ error: 'Not found' }); return; }
+
+    const oldV: Record<string, unknown> = {};
+    const newV: Record<string, unknown> = {};
+    const set: string[] = [];
+    const p: unknown[] = [];
+    let i = 1;
+
+    const cmpStr = (a: unknown, b: unknown) => (a ?? null) !== (b ?? null);
+
+    if (vendorInvRef !== undefined && cmpStr(vendorInvRef, current.vendor_inv_ref)) {
+      oldV.vendor_inv_ref = current.vendor_inv_ref; newV.vendor_inv_ref = vendorInvRef || null;
+      set.push(`vendor_inv_ref = $${i++}`); p.push(vendorInvRef || null);
+    }
+    if (billDate && current.status === 'DRAFT') {
+      const cur = current.bill_date?.toISOString?.().split('T')[0] ?? current.bill_date;
+      if (billDate !== cur) {
+        oldV.bill_date = cur; newV.bill_date = billDate;
+        set.push(`bill_date = $${i++}`); p.push(billDate);
+      }
+    }
+    const curDue = current.due_date?.toISOString?.().split('T')[0] ?? current.due_date ?? null;
+    if (dueDate !== undefined && cmpStr(dueDate || null, curDue)) {
+      oldV.due_date = curDue; newV.due_date = dueDate || null;
+      set.push(`due_date = $${i++}`); p.push(dueDate || null);
+    }
+    if (notes !== undefined && cmpStr(notes, current.notes)) {
+      oldV.notes = current.notes; newV.notes = notes || null;
+      set.push(`notes = $${i++}`); p.push(notes || null);
+    }
+
+    if (set.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(400).json({ error: 'No changes detected.' }); return;
+    }
+
+    set.push(`updated_at = now()`);
+    p.push(req.params.docId);
+    const { rows: [updated] } = await client.query(
+      `UPDATE vendor_bills SET ${set.join(', ')} WHERE doc_id = $${i} RETURNING *`, p
+    );
+    await client.query(
+      `INSERT INTO record_amendments
+         (table_name, record_id, doc_id, changed_by, change_note, old_values, new_values)
+       VALUES ('vendor_bills', $1, $2, $3, $4, $5, $6)`,
+      [current.vbl_id, current.doc_id, req.userName, changeNote.trim(),
+       JSON.stringify(oldV), JSON.stringify(newV)]
+    );
+    await client.query('COMMIT');
+    res.json({ success: true, data: updated });
+  } catch (e) { await client.query('ROLLBACK'); next(e); }
+  finally { client.release(); }
+});
+
 // PATCH /vendor-bills/:docId/status
 // Posting (DRAFT → POSTED) auto-generates a journal entry
 vendorBillsRouter.patch('/:docId/status', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
