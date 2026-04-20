@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MsalProvider } from '@azure/msal-react';
-import { ConfigProvider, Typography } from 'antd';
+import { ConfigProvider } from 'antd';
 import { msalInstance } from './config/msalInstance';
 import { geTheme } from './config/theme';
 import { AuthGuard } from './auth/AuthGuard';
