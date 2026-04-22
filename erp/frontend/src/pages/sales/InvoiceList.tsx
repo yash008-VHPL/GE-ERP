@@ -46,13 +46,10 @@ export function InvoiceList() {
 
   const columns: ColumnsType<ClientInvoice> = [
     {
-      title: 'Invoice No.',
-      dataIndex: 'doc_id',
-      render: (v: string) => (
-        <span style={{ fontFamily: 'monospace' }}>{v}</span>
-      ),
+      title: 'Invoice No.', dataIndex: 'doc_id', width: 165,
+      render: (v: string) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{v}</span>,
     },
-    { title: 'Client', dataIndex: 'client_name', ellipsis: true },
+    { title: 'Client', dataIndex: 'client_name', width: 160, ellipsis: true },
     {
       title: 'SO Ref',
       dataIndex: 'sao_doc_id',
@@ -151,7 +148,7 @@ export function InvoiceList() {
           dataSource={invoices}
           columns={columns}
           size="small"
-          scroll={{ x: 1100 }}
+          scroll={{ x: 1280 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
           onRow={row => ({
             onClick: () => navigate(`/sales/invoices/${row.doc_id}`),

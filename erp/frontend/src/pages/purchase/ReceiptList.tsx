@@ -44,7 +44,7 @@ export function ReceiptList() {
   const columns = [
     { title: 'Doc ID',      dataIndex: 'doc_id',      width: 170, render: (v: string) => <strong>{v}</strong> },
     { title: 'PO Ref',      dataIndex: 'puo_doc_id',  width: 170 },
-    { title: 'Vendor',      dataIndex: 'vendor_name', ellipsis: true },
+    { title: 'Vendor',      dataIndex: 'vendor_name', width: 180, ellipsis: true },
     { title: 'Receipt Date',dataIndex: 'receipt_date',width: 120, render: (v: string) => dayjs(v).format('DD MMM YYYY') },
     { title: 'Status',      dataIndex: 'status',      width: 140, render: (v: string) => <StatusTag status={v} /> },
     {
@@ -81,7 +81,7 @@ export function ReceiptList() {
       </div>
       <Table
         rowKey="itr_id"
-        scroll={{ x: 800 }}
+        scroll={{ x: 880 }}
         dataSource={receipts}
         columns={columns}
         loading={loading}

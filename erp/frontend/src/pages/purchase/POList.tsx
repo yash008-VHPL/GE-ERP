@@ -57,7 +57,7 @@ export function POList() {
 
   const columns = [
     { title: 'Doc ID',    dataIndex: 'doc_id',      width: 170, render: (v: string) => <strong>{v}</strong> },
-    { title: 'Vendor',    dataIndex: 'vendor_name', ellipsis: true },
+    { title: 'Vendor',    dataIndex: 'vendor_name', width: 180, ellipsis: true },
     { title: 'Workflow',  dataIndex: 'workflow',    width: 90 },
     { title: 'Status',    dataIndex: 'status',      width: 160, render: (v: string) => <StatusTag status={v} /> },
     { title: 'Order Date',dataIndex: 'order_date',  width: 110, render: (v: string) => dayjs(v).format('DD MMM YYYY') },
@@ -109,7 +109,7 @@ export function POList() {
 
       <Table
         rowKey="puo_id"
-          scroll={{ x: 900 }}
+          scroll={{ x: 920 }}
         dataSource={orders}
         columns={columns}
         loading={loading}

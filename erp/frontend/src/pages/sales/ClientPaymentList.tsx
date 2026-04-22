@@ -42,13 +42,10 @@ export function ClientPaymentList() {
 
   const columns: ColumnsType<ClientInvoicePayment> = [
     {
-      title: 'Payment No.',
-      dataIndex: 'doc_id',
-      render: (v: string) => (
-        <span style={{ fontFamily: 'monospace' }}>{v}</span>
-      ),
+      title: 'Payment No.', dataIndex: 'doc_id', width: 165,
+      render: (v: string) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{v}</span>,
     },
-    { title: 'Client', dataIndex: 'client_name', ellipsis: true },
+    { title: 'Client', dataIndex: 'client_name', width: 150, ellipsis: true },
     {
       title: 'Invoice Ref',
       dataIndex: 'inv_doc_id',
@@ -92,6 +89,7 @@ export function ClientPaymentList() {
     {
       title: 'Notes',
       dataIndex: 'notes',
+      width: 160,
       ellipsis: true,
       render: (v: string | null) => v ?? '—',
     },
@@ -115,7 +113,7 @@ export function ClientPaymentList() {
           dataSource={payments}
           columns={columns}
           size="small"
-          scroll={{ x: 1000 }}
+          scroll={{ x: 1275 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
         />
       )}

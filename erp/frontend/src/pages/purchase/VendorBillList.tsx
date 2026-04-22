@@ -54,53 +54,33 @@ export function VendorBillList() {
 
   const columns: ColumnsType<VendorBill> = [
     {
-      title: 'Bill No.',
-      dataIndex: 'doc_id',
+      title: 'Bill No.', dataIndex: 'doc_id', width: 160,
       render: (v: string, row) => (
-        <Button type="link" style={{ padding: 0 }}
+        <Button type="link" style={{ padding: 0, fontFamily: 'monospace', fontSize: 12 }}
           onClick={() => navigate(`/purchase/bills/${row.doc_id}`)}>
           {v}
         </Button>
       ),
     },
     {
-      title: 'Type',
-      dataIndex: 'bill_type',
-      width: 140,
-      render: (v: VBlBillType) => (
-        <Tag color={BILL_TYPE_COLOR[v]}>{BILL_TYPE_LABEL[v]}</Tag>
-      ),
+      title: 'Type', dataIndex: 'bill_type', width: 145,
+      render: (v: VBlBillType) => <Tag color={BILL_TYPE_COLOR[v]}>{BILL_TYPE_LABEL[v]}</Tag>,
     },
-    { title: 'Vendor',     dataIndex: 'vendor_name',    ellipsis: true },
-    { title: 'Inv Ref',    dataIndex: 'vendor_inv_ref', width: 140, render: (v: string | null) => v ?? '—' },
+    { title: 'Vendor', dataIndex: 'vendor_name', width: 160, ellipsis: true },
+    { title: 'Inv Ref', dataIndex: 'vendor_inv_ref', width: 140, render: (v: string | null) => v ?? '—' },
+    { title: 'Bill Date', dataIndex: 'bill_date', width: 110, render: (v: string) => dayjs(v).format('DD MMM YYYY') },
+    { title: 'Due Date', dataIndex: 'due_date', width: 110, render: (v: string | null) => v ? dayjs(v).format('DD MMM YYYY') : '—' },
     {
-      title: 'Bill Date', dataIndex: 'bill_date', width: 110,
-      render: (v: string) => dayjs(v).format('DD MMM YYYY'),
-    },
-    {
-      title: 'Due Date', dataIndex: 'due_date', width: 110,
-      render: (v: string | null) => v ? dayjs(v).format('DD MMM YYYY') : '—',
-    },
-    {
-      title: 'Total',
-      dataIndex: 'total_amount',
-      width: 120,
-      align: 'right' as const,
+      title: 'Total', dataIndex: 'total_amount', width: 130, align: 'right' as const,
       render: (v: string, row) => `${row.currency} ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
     },
     {
-      title: 'Paid',
-      dataIndex: 'amount_paid',
-      width: 120,
-      align: 'right' as const,
+      title: 'Paid', dataIndex: 'amount_paid', width: 120, align: 'right' as const,
       render: (v: string, row) => `${row.currency} ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
     },
-    {
-      title: 'Status', dataIndex: 'status', width: 130,
-      render: (v: string) => <Tag color={STATUS_COLOR[v] ?? 'default'}>{v}</Tag>,
-    },
-    { title: 'PO Ref', dataIndex: 'puo_doc_id',  width: 150, render: (v: string | null) => v ?? '—' },
-    { title: 'SO Ref', dataIndex: 'so_doc_id',   width: 150, render: (v: string | null) => v ?? '—' },
+    { title: 'Status', dataIndex: 'status', width: 130, render: (v: string) => <Tag color={STATUS_COLOR[v] ?? 'default'}>{v}</Tag> },
+    { title: 'PO Ref', dataIndex: 'puo_doc_id', width: 150, render: (v: string | null) => v ?? '—' },
+    { title: 'SO Ref', dataIndex: 'so_doc_id',  width: 150, render: (v: string | null) => v ?? '—' },
   ];
 
   return (
@@ -149,7 +129,7 @@ export function VendorBillList() {
           dataSource={bills}
           columns={columns}
           size="small"
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1500 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
         />
       )}

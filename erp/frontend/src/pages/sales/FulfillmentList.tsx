@@ -37,16 +37,13 @@ export function FulfillmentList() {
 
   const columns: ColumnsType<Fulfillment> = [
     {
-      title: 'Fulfillment No.',
-      dataIndex: 'doc_id',
-      render: (v: string) => (
-        <a style={{ fontFamily: 'monospace' }}>{v}</a>
-      ),
+      title: 'Fulfillment No.', dataIndex: 'doc_id', width: 165,
+      render: (v: string) => <a style={{ fontFamily: 'monospace', fontSize: 12 }}>{v}</a>,
     },
     {
       title: 'SO Ref',
       dataIndex: 'sao_doc_id',
-      width: 180,
+      width: 165,
       render: (v: string) => (
         <a
           style={{ fontFamily: 'monospace' }}
@@ -56,11 +53,11 @@ export function FulfillmentList() {
         </a>
       ),
     },
-    { title: 'Client', dataIndex: 'client_name', ellipsis: true },
+    { title: 'Client', dataIndex: 'client_name', width: 150, ellipsis: true },
     {
       title: 'Fulfillment Date',
       dataIndex: 'fulfillment_date',
-      width: 140,
+      width: 130,
       render: (v: string) => dayjs(v).format('DD MMM YYYY'),
     },
     {
@@ -95,7 +92,7 @@ export function FulfillmentList() {
           dataSource={fulfillments}
           columns={columns}
           size="small"
-          scroll={{ x: 800 }}
+          scroll={{ x: 950 }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
           onRow={row => ({
             onClick: () => navigate(`/sales/fulfillments/${row.doc_id}`),

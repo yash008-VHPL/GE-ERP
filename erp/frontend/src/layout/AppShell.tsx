@@ -28,39 +28,31 @@ export function AppShell() {
   // Which top-level sections this user can see
   // Admin        — everything
   // Management   — everything including financials (read/oversight)
-  // Coordination — purchases, sales, inventory only (no financials)
+  // Coordination — sell/buy/inventory only (no financials)
   const canSee = {
-    masterData:  hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
-    purchases:   hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
-    sales:       hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
+    sellSide:    hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
+    buySide:     hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
     inventory:   hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
     financials:  hasAnyRole(roles, 'Admin', 'Management'),
+    setup:       hasAnyRole(roles, 'Admin', 'Management', 'Coordination'),
   };
 
-  // Master data: Coordination can see items/vendors/clients for lookups;
-  // only Admin can add/edit/delete (enforced on individual pages if needed)
-  const masterChildren: MenuProps['items'] = [
-    { key: '/items',            icon: <AppstoreOutlined />, label: 'Items' },
-    { key: '/purchase/vendors', icon: <ShopOutlined />,     label: 'Vendors' },
-    { key: '/sales/clients',    icon: <TeamOutlined />,     label: 'Clients' },
-  ];
-
-  const purchaseChildren: MenuProps['items'] = [
-    { key: '/purchase/orders',   icon: <FileTextOutlined />, label: 'Purchase Orders' },
-    { key: '/purchase/receipts', icon: <InboxOutlined />,    label: 'Item Receipts' },
-    { key: '/purchase/bills',    icon: <BankOutlined />,     label: 'Vendor Bills' },
-    { key: '/purchase/payments', icon: <DollarOutlined />,   label: 'Payments' },
-  ];
-
-  const salesChildren: MenuProps['items'] = [
+  const sellSideChildren: MenuProps['items'] = [
     { key: '/sales/orders',       icon: <ShoppingCartOutlined />, label: 'Sales Orders' },
     { key: '/sales/fulfillments', icon: <SendOutlined />,         label: 'Fulfillments' },
     { key: '/sales/invoices',     icon: <FileDoneOutlined />,     label: 'Client Invoices' },
     { key: '/sales/payments',     icon: <DollarOutlined />,       label: 'Client Payments' },
   ];
 
+  const buySideChildren: MenuProps['items'] = [
+    { key: '/purchase/orders',   icon: <FileTextOutlined />, label: 'Purchase Orders' },
+    { key: '/purchase/receipts', icon: <InboxOutlined />,    label: 'Item Receipts' },
+    { key: '/purchase/bills',    icon: <BankOutlined />,     label: 'Vendor Bills' },
+    { key: '/purchase/payments', icon: <DollarOutlined />,   label: 'Vendor Payments' },
+  ];
+
   const inventoryChildren: MenuProps['items'] = [
-    { key: '/inventory/lots', icon: <StockOutlined />, label: 'Inward Lots (IB)' },
+    { key: '/inventory/lots', icon: <StockOutlined />, label: 'Inventory Lots' },
   ];
 
   const financialsChildren: MenuProps['items'] = [
@@ -73,40 +65,38 @@ export function AppShell() {
     { key: '/financials/profit-loss',          icon: <LineChartOutlined />, label: 'Profit & Loss' },
   ];
 
+  const setupChildren: MenuProps['items'] = [
+    { key: '/items',            icon: <AppstoreOutlined />, label: 'Items' },
+    { key: '/purchase/vendors', icon: <ShopOutlined />,     label: 'Vendors' },
+    { key: '/sales/clients',    icon: <TeamOutlined />,     label: 'Clients' },
+  ];
+
   const navItems = useMemo((): MenuProps['items'] => {
     const items: MenuProps['items'] = [
       { key: '/dashboard', icon: <HomeOutlined />, label: 'Dashboard' },
     ];
 
-    if (canSee.masterData && masterChildren.length > 0) {
+    if (canSee.sellSide) {
       items.push({
-        key: 'group-master',
-        icon: <DatabaseOutlined />,
-        label: 'Master Data',
-        children: masterChildren,
-      });
-    }
-    if (canSee.purchases && purchaseChildren.length > 0) {
-      items.push({
-        key: 'group-purchases',
-        icon: <FileTextOutlined />,
-        label: 'Purchases',
-        children: purchaseChildren,
-      });
-    }
-    if (canSee.sales) {
-      items.push({
-        key: 'group-sales',
+        key: 'group-sell',
         icon: <ShoppingCartOutlined />,
-        label: 'Sales',
-        children: salesChildren,
+        label: 'Sell Side',
+        children: sellSideChildren,
+      });
+    }
+    if (canSee.buySide) {
+      items.push({
+        key: 'group-buy',
+        icon: <FileTextOutlined />,
+        label: 'Buy Side',
+        children: buySideChildren,
       });
     }
     if (canSee.inventory) {
       items.push({
         key: 'group-inventory',
         icon: <StockOutlined />,
-        label: 'Inventory',
+        label: 'Inventory Management',
         children: inventoryChildren,
       });
     }
@@ -118,6 +108,14 @@ export function AppShell() {
         children: financialsChildren,
       });
     }
+    if (canSee.setup) {
+      items.push({
+        key: 'group-setup',
+        icon: <DatabaseOutlined />,
+        label: 'Setup',
+        children: setupChildren,
+      });
+    }
     return items;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roles]);
@@ -125,17 +123,11 @@ export function AppShell() {
   // Open the submenu whose child matches current path
   const openKeys = useMemo(() => {
     const p = location.pathname;
-    if (p.startsWith('/purchase') || p.startsWith('/items') || p.startsWith('/purchase/vendors')) {
-      const keys = [];
-      if (p === '/items' || p.startsWith('/purchase/vendors') || p.startsWith('/sales/clients')) keys.push('group-master');
-      if (p.startsWith('/purchase/orders') || p.startsWith('/purchase/receipts') ||
-          p.startsWith('/purchase/bills') || p.startsWith('/purchase/payments')) keys.push('group-purchases');
-      return keys;
-    }
-    if (p.startsWith('/sales')) return ['group-sales'];
+    if (p.startsWith('/sales')) return ['group-sell'];
+    if (p.startsWith('/purchase')) return ['group-buy'];
     if (p.startsWith('/inventory')) return ['group-inventory'];
     if (p.startsWith('/financials')) return ['group-financials'];
-    if (p === '/items') return ['group-master'];
+    if (p === '/items' || p.startsWith('/purchase/vendors') || p.startsWith('/sales/clients')) return ['group-setup'];
     return [];
   }, [location.pathname]);
 
