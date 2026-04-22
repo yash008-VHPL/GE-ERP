@@ -5,6 +5,39 @@ import { formatDocId } from '../services/poService';
 
 export const paymentsRouter = Router();
 
+// GET /payments/vendor-bills — list all VBPs joined with vendor + bill info
+paymentsRouter.get('/vendor-bills', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT vbp.*,
+             v.vendor_name,
+             vbl.doc_id  AS vbl_doc_id,
+             vbl.bill_type
+      FROM vendor_bill_payments vbp
+      JOIN vendors      v   ON v.vendor_id  = vbp.vendor_id
+      JOIN vendor_bills vbl ON vbl.vbl_id   = vbp.vbl_id
+      ORDER BY vbp.payment_date DESC, vbp.created_at DESC
+    `);
+    res.json({ data: rows });
+  } catch (e) { next(e); }
+});
+
+// GET /payments/vendor-prepayments — list all VPrs joined with vendor + PO info
+paymentsRouter.get('/vendor-prepayments', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT vpr.*,
+             v.vendor_name,
+             po.doc_id AS puo_doc_id
+      FROM vendor_prepayments vpr
+      JOIN vendors        v  ON v.vendor_id = vpr.vendor_id
+      JOIN purchase_orders po ON po.puo_id  = vpr.puo_id
+      ORDER BY vpr.payment_date DESC, vpr.created_at DESC
+    `);
+    res.json({ data: rows });
+  } catch (e) { next(e); }
+});
+
 // GET /payments/client-invoices — list of client_invoice_payments joined to invoice and client
 paymentsRouter.get('/client-invoices', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
   try {
