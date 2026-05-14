@@ -23,6 +23,8 @@ import { ReceiptDetail }        from './pages/purchase/ReceiptDetail';
 import { VendorBillList }       from './pages/purchase/VendorBillList';
 import { VendorBillCreate }     from './pages/purchase/VendorBillCreate';
 import { VendorBillDetail }     from './pages/purchase/VendorBillDetail';
+import { VendorBillEdit }       from './pages/purchase/VendorBillEdit';
+import { VendorBillPrint }      from './pages/purchase/VendorBillPrint';
 import { PaymentList }          from './pages/purchase/PaymentList';
 
 // Sales
@@ -73,10 +75,12 @@ export default function App() {
                 <Route path="purchase/receipts"          element={<ReceiptList />} />
                 <Route path="purchase/receipts/new"      element={<ReceiptCreate />} />
                 <Route path="purchase/receipts/:docId"   element={<ReceiptDetail />} />
-                <Route path="purchase/bills"             element={<VendorBillList />} />
-                <Route path="purchase/bills/create"      element={<VendorBillCreate />} />
-                <Route path="purchase/bills/:docId"      element={<VendorBillDetail />} />
-                <Route path="purchase/payments"          element={<PaymentList />} />
+                <Route path="purchase/bills"                   element={<VendorBillList />} />
+                <Route path="purchase/bills/create"            element={<VendorBillCreate />} />
+                <Route path="purchase/bills/:docId/edit"       element={<VendorBillEdit />} />
+                <Route path="purchase/bills/:docId/print"      element={<VendorBillPrint />} />
+                <Route path="purchase/bills/:docId"            element={<VendorBillDetail />} />
+                <Route path="purchase/payments"                element={<PaymentList />} />
 
                 {/* Sales */}
                 <Route path="sales/clients"              element={<ClientList />} />

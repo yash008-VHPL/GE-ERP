@@ -180,6 +180,7 @@ export function InvoiceCreate() {
     setSubmitting(true);
     try {
       const payload = {
+        clientId:    values.clientId ?? null,
         saoId:       values.saoId ?? null,
         invoiceDate: dayjs(values.invoiceDate as dayjs.Dayjs).format('YYYY-MM-DD'),
         dueDate:     values.dueDate ? dayjs(values.dueDate as dayjs.Dayjs).format('YYYY-MM-DD') : null,

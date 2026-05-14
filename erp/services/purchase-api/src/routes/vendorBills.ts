@@ -137,6 +137,76 @@ vendorBillsRouter.post('/', requireAuth, async (req: Request, res: Response, nex
   finally { client.release(); }
 });
 
+// PATCH /vendor-bills/:docId/draft — full edit for DRAFT bills (header + lines)
+vendorBillsRouter.patch('/:docId/draft', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: [bill] } = await client.query(
+      `SELECT * FROM vendor_bills WHERE doc_id = $1 FOR UPDATE`, [req.params.docId]
+    );
+    if (!bill) { res.status(404).json({ error: 'Not found' }); return; }
+    if (bill.status !== 'DRAFT') {
+      res.status(400).json({ error: 'Only DRAFT bills can be fully edited. Use the minor edit for posted bills.' });
+      return;
+    }
+
+    const { vendorInvRef, billDate, dueDate, currency, notes, lines } = req.body;
+
+    // Update header
+    await client.query(`
+      UPDATE vendor_bills
+         SET vendor_inv_ref = $1,
+             bill_date      = $2,
+             due_date       = $3,
+             currency       = $4,
+             notes          = $5,
+             updated_at     = now()
+       WHERE vbl_id = $6
+    `, [vendorInvRef ?? null, billDate, dueDate ?? null, currency ?? bill.currency, notes ?? null, bill.vbl_id]);
+
+    // Replace lines: delete existing, insert new
+    await client.query(`DELETE FROM vendor_bill_lines WHERE vbl_id = $1`, [bill.vbl_id]);
+
+    for (let i = 0; i < (lines ?? []).length; i++) {
+      const l = lines[i];
+      const taxAmount = (l.quantity * l.unitPrice) * ((l.taxRate ?? 0) / 100);
+      await client.query(`
+        INSERT INTO vendor_bill_lines
+          (vbl_id, line_seq, item_id, description, quantity, unit_price, tax_rate, tax_amount, gl_account_code)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `, [
+        bill.vbl_id, i + 1,
+        l.itemId ?? null, l.description,
+        l.quantity, l.unitPrice,
+        l.taxRate ?? 0, taxAmount,
+        l.glAccountCode ?? null,
+      ]);
+    }
+
+    // Log amendment
+    await client.query(`
+      INSERT INTO record_amendments
+        (table_name, record_id, doc_id, changed_by, change_note, old_values, new_values)
+      VALUES ('vendor_bills', $1, $2, $3, $4, $5, $6)
+    `, [
+      bill.vbl_id, bill.doc_id, req.userName, 'Draft bill edited (full)',
+      JSON.stringify({ status: 'DRAFT', note: 'Lines replaced' }),
+      JSON.stringify({ vendor_inv_ref: vendorInvRef, bill_date: billDate, currency, lines: lines?.length }),
+    ]);
+
+    await client.query('COMMIT');
+
+    // Re-fetch to return updated totals
+    const { rows: [updated] } = await pool.query(
+      `SELECT * FROM vendor_bills WHERE vbl_id = $1`, [bill.vbl_id]
+    );
+    res.json({ success: true, data: updated });
+  } catch (e) { await client.query('ROLLBACK'); next(e); }
+  finally { client.release(); }
+});
+
 // PATCH /vendor-bills/:docId — edit mutable fields with mandatory amendment note
 vendorBillsRouter.patch('/:docId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   const { vendorInvRef, billDate, dueDate, notes, changeNote } = req.body;

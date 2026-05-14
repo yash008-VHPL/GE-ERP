@@ -63,18 +63,26 @@ invoicesRouter.get('/:docId', async (req: Request, res: Response, next: NextFunc
   } catch (e) { next(e); }
 });
 
-// POST /invoices — create draft from SO lines
+// POST /invoices — create draft from SO lines OR standalone (no SO)
 invoicesRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { saoId, invoiceDate, dueDate, currency, clientRef, notes, lines } = req.body;
+    const { saoId, clientId: directClientId, invoiceDate, dueDate, currency, clientRef, notes, lines } = req.body;
 
-    // Resolve client_id from sales order
-    const { rows: [so] } = await client.query(
-      `SELECT client_id FROM sales_orders WHERE sao_id = $1`, [saoId]
-    );
-    if (!so) { res.status(404).json({ error: 'Sales order not found' }); return; }
+    // Resolve client_id — from SO if provided, or from directClientId for standalone invoices
+    let resolvedClientId: number;
+    if (saoId) {
+      const { rows: [so] } = await client.query(
+        `SELECT client_id FROM sales_orders WHERE sao_id = $1`, [saoId]
+      );
+      if (!so) { res.status(404).json({ error: 'Sales order not found' }); return; }
+      resolvedClientId = so.client_id;
+    } else if (directClientId) {
+      resolvedClientId = directClientId;
+    } else {
+      res.status(400).json({ error: 'Either saoId or clientId is required' }); return;
+    }
 
     const year = new Date(invoiceDate).getFullYear();
     const { rows: [seq] } = await client.query(
@@ -92,7 +100,7 @@ invoicesRouter.post('/', async (req: Request, res: Response, next: NextFunction)
          due_date, currency, client_ref, notes, status, total_amount, amount_paid)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'DRAFT',$11,0)
       RETURNING *
-    `, [docId, seq.num, year, saoId, so.client_id, invoiceDate,
+    `, [docId, seq.num, year, saoId ?? null, resolvedClientId, invoiceDate,
         dueDate ?? null, currency ?? 'USD', clientRef ?? null, notes ?? null, totalAmount]);
 
     for (let i = 0; i < lines.length; i++) {

@@ -7,7 +7,7 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined, DeleteOutlined,
-  CheckCircleOutlined, DollarOutlined, EditOutlined,
+  CheckCircleOutlined, DollarOutlined, EditOutlined, PrinterOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { purchaseApi } from '../../config/apiClient';
@@ -34,15 +34,19 @@ export function VendorBillDetail() {
   const { docId } = useParams<{ docId: string }>();
   const navigate  = useNavigate();
 
-  const [bill, setBill]           = useState<VendorBill | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [posting, setPosting]     = useState(false);
-  const [payModal, setPayModal]   = useState(false);
-  const [paying, setPaying]       = useState(false);
-  const [editOpen, setEditOpen]   = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [amendKey, setAmendKey]   = useState(0);
-  const [payForm] = Form.useForm();
+  const [bill, setBill]               = useState<VendorBill | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [posting, setPosting]         = useState(false);
+  const [payModal, setPayModal]       = useState(false);
+  const [paying, setPaying]           = useState(false);
+  const [editOpen, setEditOpen]       = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [amendKey, setAmendKey]       = useState(0);
+  const [editPayOpen, setEditPayOpen] = useState(false);
+  const [editPayRow, setEditPayRow]   = useState<{ doc_id: string; payment_ref: string | null; payment_method: string | null; notes: string | null } | null>(null);
+  const [savingPay, setSavingPay]     = useState(false);
+  const [payForm]    = Form.useForm();
+  const [editPayForm] = Form.useForm();
 
   const reload = () => {
     if (!docId) return;
@@ -143,6 +147,28 @@ export function VendorBillDetail() {
     { title: 'GL Name',    dataIndex: 'gl_account_name', width: 160, render: (v: string | null) => v ?? '—' },
   ];
 
+  const handleEditPayment = async (values: Record<string, unknown>) => {
+    if (!editPayRow) return;
+    setSavingPay(true);
+    try {
+      await purchaseApi.patch(`/payments/vendor-bill-payment/${editPayRow.doc_id}`, {
+        paymentRef:    values.paymentRef ?? null,
+        paymentMethod: values.paymentMethod ?? null,
+        notes:         values.notes ?? null,
+        changeNote:    values.changeNote,
+      });
+      message.success('Payment updated');
+      setEditPayOpen(false);
+      setAmendKey(k => k + 1);
+      reload();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      message.error(err.response?.data?.error ?? 'Update failed');
+    } finally {
+      setSavingPay(false);
+    }
+  };
+
   const paymentColumns = [
     { title: 'Date',    dataIndex: 'payment_date',   width: 110,
       render: (v: string) => dayjs(v).format('DD MMM YYYY') },
@@ -151,6 +177,23 @@ export function VendorBillDetail() {
     { title: 'Amount',  dataIndex: 'amount',         width: 120,
       render: (v: string) => <strong>{Number(v).toFixed(2)}</strong> },
     { title: 'Currency', dataIndex: 'currency',      width: 80 },
+    {
+      title: '', width: 60,
+      render: (_: unknown, row: { doc_id: string; payment_ref: string | null; payment_method: string | null; notes: string | null }) => (
+        <Button size="small" icon={<EditOutlined />}
+          onClick={() => {
+            setEditPayRow(row);
+            editPayForm.setFieldsValue({
+              paymentRef:    row.payment_ref ?? '',
+              paymentMethod: row.payment_method ?? undefined,
+              notes:         row.notes ?? '',
+              changeNote:    '',
+            });
+            setEditPayOpen(true);
+          }}
+        />
+      ),
+    },
   ];
 
   return (
@@ -233,9 +276,22 @@ export function VendorBillDetail() {
       <Divider />
 
       <Space>
-        {['DRAFT','POSTED','PARTIALLY_PAID'].includes(bill.status) && (
+        {/* DRAFT: full edit page | POSTED+: minor-field modal */}
+        {bill.status === 'DRAFT' && (
+          <Button icon={<EditOutlined />} onClick={() => navigate(`/purchase/bills/${docId}/edit`)}>
+            Edit Bill
+          </Button>
+        )}
+        {['POSTED','PARTIALLY_PAID'].includes(bill.status) && (
           <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>Edit</Button>
         )}
+
+        <Button
+          icon={<PrinterOutlined />}
+          onClick={() => window.open(`/purchase/bills/${docId}/print`, '_blank')}
+        >
+          Print / PDF
+        </Button>
 
         {bill.status === 'DRAFT' && (
           <Popconfirm
@@ -304,7 +360,39 @@ export function VendorBillDetail() {
         ]}
       />
 
-      {/* Payment modal */}
+      {/* Payment correction modal */}
+      <Modal
+        title={`Correct Payment — ${editPayRow?.doc_id}`}
+        open={editPayOpen}
+        onCancel={() => { setEditPayOpen(false); editPayForm.resetFields(); }}
+        footer={null}
+        destroyOnClose
+      >
+        <Form form={editPayForm} layout="vertical" onFinish={handleEditPayment}>
+          <Form.Item name="paymentMethod" label="Payment Method">
+            <Select allowClear options={[
+              { value: 'Bank Transfer', label: 'Bank Transfer' },
+              { value: 'Wise',          label: 'Wise' },
+              { value: 'Cheque',        label: 'Cheque' },
+              { value: 'Cash',          label: 'Cash' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="paymentRef" label="Payment Reference">
+            <Input placeholder="UTR / cheque no. / etc." />
+          </Form.Item>
+          <Form.Item name="notes" label="Notes">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item name="changeNote" label="Reason for correction" rules={[{ required: true, message: 'Please explain what changed and why' }]}>
+            <Input.TextArea rows={2} placeholder="e.g. Wrong reference recorded — correct UTR is XYZ" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={savingPay} block>
+            Save Correction
+          </Button>
+        </Form>
+      </Modal>
+
+      {/* Record payment modal */}
       <Modal
         title={`Record Payment — ${bill.doc_id}`}
         open={payModal}
