@@ -33,7 +33,7 @@ export function PODetail() {
     try {
       const r = await purchaseApi.get(`/purchase-orders/${docId}/pdf`, { responseType: 'blob' });
       // If the server returned JSON error instead of a PDF, surface it
-      if (r.headers['content-type']?.includes('application/json')) {
+      if (String(r.headers['content-type'] ?? '').includes('application/json')) {
         const text = await (r.data as Blob).text();
         const json = JSON.parse(text);
         message.error(`PDF error: ${json.error ?? 'Unknown error'}`);

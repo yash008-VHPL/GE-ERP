@@ -67,7 +67,7 @@ export function VendorBillEdit() {
       setLines((b.lines ?? []).map((l, idx) => ({
         key:          idx,
         itemId:       (l as { item_id?: number }).item_id,
-        description:  l.description,
+        description:  l.description ?? '',
         quantity:     parseFloat(l.quantity),
         unitPrice:    parseFloat(l.unit_price),
         taxRate:      parseFloat(l.tax_rate),

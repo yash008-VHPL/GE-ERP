@@ -84,12 +84,14 @@ export interface VendorBillLine {
 
 export interface VendorBillPayment {
   vbp_id:         number;
+  doc_id:         string;
   vbl_id:         number;
   payment_date:   string;
   payment_method: string | null;
   payment_ref:    string | null;
   amount:         string;
   currency:       string;
+  notes:          string | null;
 }
 
 export interface VendorBill {
