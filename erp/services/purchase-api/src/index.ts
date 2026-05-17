@@ -23,6 +23,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : '*', credentials: true }));
 
+app.get('/',       (_req, res) => res.json({ status: 'ok', service: 'ge-erp-purchase-api' }));
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'ge-erp-purchase-api' }));
 
 app.use('/vendors',         vendorsRouter);
